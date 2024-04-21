@@ -3,6 +3,7 @@ pub mod controller;
 pub mod middleware;
 pub mod util;
 pub mod model;
+pub mod enums;
 
 #[macro_use]
 extern crate lazy_static;
