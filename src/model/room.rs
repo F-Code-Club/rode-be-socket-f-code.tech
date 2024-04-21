@@ -1,21 +1,5 @@
 use chrono::NaiveDateTime;
-
-#[derive(Debug, sqlx::Type)]
-pub enum RoomKind {
-    #[sqlx(rename = "BE")]
-    Backend,
-    #[sqlx(rename = "FE")]
-    Frontend
-}
-impl From<String> for RoomKind {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "BE" => Self::Backend,
-            "FE" => Self::Frontend,
-            _ => unreachable!()
-        }
-    }
-}
+use crate::enums::RoomKind;
 
 #[derive(Debug, sqlx::FromRow)]
 #[sqlx(rename_all = "camelCase")]

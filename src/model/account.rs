@@ -1,21 +1,5 @@
 use chrono::NaiveDateTime;
-
-#[derive(Debug, sqlx::Type)]
-pub enum AccountRole {
-    #[sqlx(rename = "user")]
-    User,
-    #[sqlx(rename = "admin")]
-    Admin,
-}
-impl From<String> for AccountRole {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "user" => AccountRole::User,
-            "admin" => AccountRole::Admin,
-            _ => unreachable!(),
-        }
-    }
-}
+use crate::enums::AccountRole;
 
 #[derive(Debug, sqlx::FromRow)]
 #[sqlx(rename_all = "camelCase")]
