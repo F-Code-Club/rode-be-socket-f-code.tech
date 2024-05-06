@@ -5,15 +5,21 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.82"
-axum = { version = "0.7.5", features = ["macros", "ws"] }
-chrono = "0.4.38"
-dotenvy = "0.15.7"
-dotenvy_macro = "0.15.7"
+axum = { version = "0.7.5", features = ["macros", "multipart", "ws"] }
+axum-extra = { version = "0.9.3", features = ["query", "typed-header"] }
+chromiumoxide = { version = "0.5.7", features = ["tokio-runtime"], default-features = false }
+chrono = { version = "0.4.38", features = ["serde"] }
+dirs = "5.0.1"
+futures = "0.3.30"
+image = "0.25.1"
 jsonwebtoken = "9.3.0"
 lazy_static = "1.4.0"
+mime_guess = "2.0.4"
+pixelmatch = "0.1.0"
+rayon = "1.10.0"
 serde = { version = "1.0.198", features = ["derive"] }
 serde_json = "1.0.116"
-sqlx = { version = "0.7.4", features = ["runtime-tokio", "mysql", "chrono"] }
+sqlx = { version = "0.7.4", features = ["runtime-tokio", "mysql", "chrono", "uuid"] }
 thiserror = "1.0.58"
 tokio = { version = "1.37.0", features = ["full"] }
 tower-http = { version = "0.5.2", features = ["trace"] }
@@ -21,3 +27,9 @@ tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 utoipa = { version = "4.2.0", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
+uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
+
+[dev-dependencies]
+http-body-util = "0.1.1"
+rstest = "0.19.0"
+tower = "0.4.13"

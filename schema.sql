@@ -1,96 +1,100 @@
 /* 
-    Table definition generated using mysqldump
-    For reference purpose only
+    Table definition for reference purpose only
 */
 
-CREATE TABLE IF NOT EXISTS account (
-    `id` varchar(36) NOT NULL,
-    `fname` varchar(255) NOT NULL,
-    `lname` varchar(255) NOT NULL,
-    `email` varchar(255) NOT NULL,
-    `studentId` varchar(255) NOT NULL,
-    `phone` varchar(255) NOT NULL,
-    `dob` datetime NOT NULL,
-    `role` enum('admin','user') NOT NULL DEFAULT 'user',
-    `isActive` tinyint(4) NOT NULL DEFAULT 1,
-    `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-    `isLoggedIn` tinyint(4) NOT NULL DEFAULT 0,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `IDX_4c8f96ccf523e9a3faefd5bdd4` (`email`),
-    UNIQUE KEY `IDX_2109940ab8cb8ef76e13ba6cef` (`studentId`),
-    UNIQUE KEY `IDX_a13e2234cf22b150ea2e72fba6` (`phone`)
+CREATE TABLE IF NOT EXISTS scores(
+    id char(36) NOT NULL,
+    room_id int NOT NULL,
+    team_id char(36) NOT NULL,
+    total_scores int unsigned NOT NULL,
+    last_submit_time timestamp NOT NULL
+ );
+
+CREATE TABLE IF NOT EXISTS rooms(
+    id int NOT NULL AUTO_INCREMENT,
+    code varchar(12) NOT NULL,
+    stack_id char(36) NOT NULL,
+    size int NOT NULL,
+    type enum("FE", "BE") NOT NULL, 
+    open_time datetime NOT NULL,
+    close_time datetime NOT NULL,
+    created_at date NOT NULL,
+    is_privated boolean NOT NULL,
+    PRIMARY KEY(id)
 );
 
-CREATE TABLE IF NOT EXISTS local_file (
-    `id` varchar(36) NOT NULL,
-    `path` varchar(255) NOT NULL,
-    `isUsed` tinyint(4) NOT NULL DEFAULT 0,
-    PRIMARY KEY (`id`)
+CREATE TABLE IF NOT EXISTS question_stacks(
+    id char(36) NOT NULL,
+    stack_max int NOT NULL,
+    name varchar(128) NOT NULL,
+    status enum("DRAFT", "ACTIVE", "DE_ACTIVE", "USED") NOT NULL,
+    created_at date not NULL,
+    type enum("FE", "BE") NOT NULl
 );
 
-CREATE TABLE IF NOT EXISTS question (
-    `id` varchar(36) NOT NULL,
-    `questionImage` varchar(255) NOT NULL,
-    `maxSubmitTimes` int(11) NOT NULL DEFAULT 5,
-    `colors` varchar(255) DEFAULT NULL,
-    `codeTemplate` text DEFAULT NULL,
-    `roomId` varchar(36) DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `FK_a70cec821dffadff31117ff3027` (`roomId`),
-    CONSTRAINT `FK_a70cec821dffadff31117ff3027` FOREIGN KEY (`roomId`) REFERENCES `room` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE IF NOT EXISTS questions(
+    id char(36) NOT NULL,
+    stack_id char(36) NOT NULL,
+    max_submit_time int NOT NULL,
+    score int unsigned NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS question_test_case (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `input` varchar(255) NOT NULL,
-    `output` varchar(255) NOT NULL,
-    `questionId` varchar(36) DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `FK_cc548b5d340bf0aa138b81fbffb` (`questionId`),
-    CONSTRAINT `FK_cc548b5d340bf0aa138b81fbffb` FOREIGN KEY (`questionId`) REFERENCES `question` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE IF NOT EXISTS templates(
+    id int NOT NULL AUTO_INCREMENT,
+    question_id char(36) NOT NULL,
+    local_path varchar(64) NOT NULL,
+    url varchar(64) NOT NULL,
+    PRIMARY KEY(id)
 );
 
-CREATE TABLE IF NOT EXISTS room (
-    `id` varchar(36) NOT NULL,
-    `code` varchar(255) NOT NULL,
-    `openTime` datetime NOT NULL,
-    `closeTime` datetime DEFAULT NULL,
-    `duration` int(11) DEFAULT NULL,
-    `type` enum('BE','FE') NOT NULL,
-    `isPrivate` tinyint(4) NOT NULL DEFAULT 0,
-    `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `IDX_0ab3536ee398cffd79acd2803c` (`code`)
+CREATE TABLE IF NOT EXISTS testcases(
+    id int NOT NULL AUTO_INCREMENT,
+    question_id char(36) NOT NULL,
+    input text NOT NULL,
+    output text NOT NULL,
+    PRIMARY KEY(id)
 );
 
-CREATE TABLE IF NOT EXISTS submit_history (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `score` float NOT NULL,
-    `language` enum('C_CPP','JAVA','PYTHON') DEFAULT NULL,
-    `submissions` text NOT NULL,
-    `submittedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-    `time` int(11) DEFAULT NULL,
-    `space` int(11) DEFAULT NULL,
-    `link` varchar(255) DEFAULT NULL,
-    `accountId` varchar(36) DEFAULT NULL,
-    `questionId` varchar(36) DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `FK_f39dc2addfce15a98ea9ae512e1` (`accountId`),
-    KEY `FK_ffa0a6aaa0b8a6032c1a25f975f` (`questionId`),
-    CONSTRAINT `FK_f39dc2addfce15a98ea9ae512e1` FOREIGN KEY (`accountId`) REFERENCES `account` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    CONSTRAINT `FK_ffa0a6aaa0b8a6032c1a25f975f` FOREIGN KEY (`questionId`) REFERENCES `question` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+CREATE TABLE IF NOT EXISTS submit_histories(
+    question_id char(36) NOT NULL,
+    score_id int unsigned NOT NULL,
+    member_id char(36) NOT NULL,
+    submit_number int NOT NULL,
+    run_tme int unsigned NOT NULL,
+    score int unsigned NOT NULL,
+    language enum("JAVA", "Python", "C_CPP", "CSS") NOT NULL,
+    character_count int unsigned NOT NULL,
+    last_submit_time timestamp NOT NULL,
+    submissions text NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS user_room (
-    `id` varchar(36) NOT NULL,
-    `joinTime` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-    `finishTime` datetime DEFAULT NULL,
-    `attendance` tinyint(4) NOT NULL DEFAULT 0,
-    `accountId` varchar(36) DEFAULT NULL,
-    `roomId` varchar(36) DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `FK_29d3d96325adb0468ac2ee1676d` (`accountId`),
-    KEY `FK_a074a2b9287d9941dcf5144bffe` (`roomId`),
-    CONSTRAINT `FK_29d3d96325adb0468ac2ee1676d` FOREIGN KEY (`accountId`) REFERENCES `account` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-    CONSTRAINT `FK_a074a2b9287d9941dcf5144bffe` FOREIGN KEY (`roomId`) REFERENCES `room` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+CREATE TABLE IF NOT EXISTS teams(
+    id int NOT NULL AUTO_INCREMENT,
+    name varchar(128) NOT NULL,
+    member_count int NOT NULL,
+    PRIMARY KEY(id)
 );
+
+CREATE TABLE IF NOT EXISTS members(
+    id int NOT NULL AUTO_INCREMENT,
+    team_id int unsigned NOT NULL,
+    account_id char(36) NOT NULL,
+    has_joined_room boolean NOT NULL,
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS accounts(
+    id char(36) NOT NULL,
+    full_name varchar(48) NOT NULL,
+    student_id varchar(24) NOT NULL,
+    email varchar(30) NOT NULL,
+    password varchar(128) NOT NULL,
+    phone varchar(12) NOT NULL,
+    dob date NOT NULL,
+    role enum("admin", "manager", 'user') NOT NULL,
+    created_at date NOT NULL,
+    updated_at date NOT NULL,
+    is_locked boolean NOT NULL,
+    is_logged_in boolean NOT NULL,
+    is_enabled boolean NOT NULL
+)
