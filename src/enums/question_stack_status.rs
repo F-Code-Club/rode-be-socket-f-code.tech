@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(rename_all = "SCREAMING_SNAKE_CASE")]
+#[sqlx(type_name = "question_stack_status_enum", rename_all = "SCREAMING_SNAKE_CASE")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum QuestionStackStatus {
     Draft,
