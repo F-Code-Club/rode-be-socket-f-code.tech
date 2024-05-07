@@ -1,12 +1,13 @@
 use chrono::NaiveDate;
 use serde::Serialize;
-use sqlx::MySqlPool;
+use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::enums::AccountRole;
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct Account {
-    pub id: uuid::fmt::Hyphenated,
+    pub id: Uuid,
     pub full_name: String,
     pub student_id: String,
     pub email: String,
@@ -22,13 +23,11 @@ pub struct Account {
 }
 
 impl Account {
-    pub async fn get_one_by_id(
-        id: uuid::fmt::Hyphenated,
-        database: &MySqlPool,
-    ) -> anyhow::Result<Account> {
-        let account = sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE id = ?", id)
-            .fetch_one(database)
-            .await?;
+    pub async fn get_one_by_id(id: Uuid, database: &PgPool) -> anyhow::Result<Account> {
+        let account =
+            sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE id = $1", id)
+                .fetch_one(database)
+                .await?;
 
         Ok(account)
     }
