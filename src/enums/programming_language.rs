@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(rename_all = "SCREAMING_SNAKE_CASE")]
+#[sqlx(type_name = "programming_lang_enum", rename_all = "SCREAMING_SNAKE_CASE")]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ProgrammingLanguage {
     #[allow(non_camel_case_types)]

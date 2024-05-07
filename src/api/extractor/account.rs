@@ -45,7 +45,7 @@ impl FromRequestParts<Arc<AppState>> for Account {
                 message: error.to_string(),
             })?;
 
-        Account::get_one_by_id(account_id.hyphenated(), &state.database)
+        Account::get_one_by_id(account_id, &state.database)
             .await
             .map_err(|error| Error::Unauthorized {
                 message: error.to_string(),

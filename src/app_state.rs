@@ -1,15 +1,15 @@
 use anyhow::Result;
-use sqlx::MySqlPool;
+use sqlx::PgPool;
 
 use crate::config;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub database: MySqlPool,
+    pub database: PgPool,
 }
 impl AppState {
     pub async fn new() -> Result<Self> {
-        let pool = MySqlPool::connect(config::DATABASE_URL).await?;
+        let pool = PgPool::connect(config::DATABASE_URL).await?;
 
         Ok(Self { database: pool })
     }

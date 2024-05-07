@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, sqlx::Type)]
-#[sqlx(rename_all = "lowercase")]
+#[sqlx(type_name = "role_enum", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum AccountRole {
     Admin,
