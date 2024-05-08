@@ -1,7 +1,6 @@
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::io::Write;
 use std::path::Path;
-use std::path::PathBuf;
 use std::process::Command;
 use std::process::Stdio;
 use std::str;
@@ -13,9 +12,7 @@ use crate::enums::ProgrammingLanguage;
 use super::write_to_random_file;
 use super::ExecutionResult;
 
-async fn compile(code_path: PathBuf) -> anyhow::Result<PathBuf> {
-    let executable_path = code_path.with_extension("");
-
+async fn compile(code_path: &Path) -> anyhow::Result<()> {
     // Command: javac $code_path
     tokio::process::Command::new("javac")
         .arg(code_path)
@@ -23,17 +20,16 @@ async fn compile(code_path: PathBuf) -> anyhow::Result<PathBuf> {
         .wait()
         .await?;
 
-    Ok(executable_path)
+    Ok(())
 }
 
-fn execute_one(executable_path: &Path, testcase: &Testcase) -> ExecutionResult {
+fn execute_one(project_path: &Path, testcase: &Testcase) -> ExecutionResult {
     let start = Instant::now();
 
     // Run the code
     // Command: java -c -p $executable_path Main
     let mut process = Command::new("java")
-        .arg("-cp")
-        .arg(executable_path)
+        .current_dir(project_path)
         .arg("Main")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -47,6 +43,7 @@ fn execute_one(executable_path: &Path, testcase: &Testcase) -> ExecutionResult {
 
     // Get output and check
     let output = process.wait_with_output().unwrap();
+    println!("{}", String::from_utf8(output.stdout.clone()).unwrap().trim());
     let is_match = String::from_utf8(output.stdout).unwrap().trim() == testcase.output.trim();
 
     let end = Instant::now();
@@ -59,14 +56,15 @@ fn execute_one(executable_path: &Path, testcase: &Testcase) -> ExecutionResult {
 
 pub async fn execute(code: &str, testcases: Vec<Testcase>) -> anyhow::Result<ExecutionResult> {
     let code_path = write_to_random_file(code, ProgrammingLanguage::Java).await?;
+    let project_path = code_path.parent().unwrap().to_path_buf();
 
-    let executable_path = compile(code_path).await?;
+    compile(&code_path).await?;
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
         let execution_result = testcases
             .par_iter()
-            .map(|testcase| execute_one(&executable_path, testcase))
+            .map(|testcase| execute_one(&project_path, testcase))
             .reduce(ExecutionResult::zero, |acc, current| acc + current);
 
         let _ = send.send(execution_result);

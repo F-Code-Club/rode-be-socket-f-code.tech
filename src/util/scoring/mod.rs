@@ -40,9 +40,19 @@ impl ExecutionResult {
     }
 }
 
-fn random_file_path(language: ProgrammingLanguage) -> PathBuf {
+fn random_directory() -> PathBuf {
     loop {
         let mut path = env::temp_dir();
+        path.push(Uuid::new_v4().to_string());
+        if !path.exists() {
+            return path;
+        }
+    }
+}
+
+fn random_file_path(language: ProgrammingLanguage) -> PathBuf {
+    loop {
+        let mut path = random_directory();
         path.push(Uuid::new_v4().to_string());
         path.set_extension(language.get_extension());
         if !path.exists() {
@@ -56,6 +66,7 @@ async fn write_to_random_file(
     language: ProgrammingLanguage,
 ) -> anyhow::Result<PathBuf> {
     let code_path = random_file_path(language);
+    fs::create_dir_all(code_path.parent().unwrap()).await?;
     let mut file = fs::OpenOptions::new()
         .create_new(true)
         .write(true)
@@ -107,7 +118,11 @@ mod tests {
     #[trace]
     #[tokio::test]
     async fn backend(
-        #[values(ProgrammingLanguage::Python, ProgrammingLanguage::C_CPP, ProgrammingLanguage::Java)]
+        #[values(
+            ProgrammingLanguage::Python,
+            ProgrammingLanguage::C_CPP,
+            ProgrammingLanguage::Java
+        )]
         language: ProgrammingLanguage,
         #[files("test_data/scoring/**")] problem_path: PathBuf,
     ) {
