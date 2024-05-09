@@ -4,7 +4,6 @@ mod java;
 mod python;
 
 use std::env;
-use std::ops::Add;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -21,28 +20,20 @@ pub struct ExecutionResult {
     score: u32,
     run_time: u32,
 }
-impl Add for ExecutionResult {
-    type Output = ExecutionResult;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        ExecutionResult {
-            score: self.score + rhs.score,
-            run_time: self.run_time + rhs.run_time,
-        }
-    }
-}
-impl ExecutionResult {
-    fn zero() -> ExecutionResult {
-        ExecutionResult {
-            score: 0,
-            run_time: 0,
+fn random_directory() -> PathBuf {
+    loop {
+        let mut path = env::temp_dir();
+        path.push(Uuid::new_v4().to_string());
+        if !path.exists() {
+            return path;
         }
     }
 }
 
 fn random_file_path(language: ProgrammingLanguage) -> PathBuf {
     loop {
-        let mut path = env::temp_dir();
+        let mut path = random_directory();
         path.push(Uuid::new_v4().to_string());
         path.set_extension(language.get_extension());
         if !path.exists() {
@@ -56,6 +47,7 @@ async fn write_to_random_file(
     language: ProgrammingLanguage,
 ) -> anyhow::Result<PathBuf> {
     let code_path = random_file_path(language);
+    fs::create_dir_all(code_path.parent().unwrap()).await?;
     let mut file = fs::OpenOptions::new()
         .create_new(true)
         .write(true)
@@ -72,6 +64,7 @@ pub async fn score(
     code: &str,
     testcases: Option<Vec<Testcase>>,
     template: Option<&Template>,
+    question_score: u32,
 ) -> anyhow::Result<ExecutionResult> {
     if language == ProgrammingLanguage::Css {
         let template =
@@ -83,13 +76,13 @@ pub async fn score(
         testcases.context("Testcases are required for backend programming language(s)")?;
 
     if language == ProgrammingLanguage::C_CPP {
-        return c_cpp::execute(code, testcases).await;
+        return c_cpp::execute(code, testcases, question_score).await;
     }
     if language == ProgrammingLanguage::Python {
-        return python::execute(code, testcases).await;
+        return python::execute(code, testcases, question_score).await;
     }
     if language == ProgrammingLanguage::Java {
-        return java::execute(code, testcases).await;
+        return java::execute(code, testcases, question_score).await;
     }
 
     unreachable!()
@@ -102,12 +95,17 @@ mod tests {
 
     use super::*;
 
-    // TODO: implement java version and add more problems
+    const QUESTION_SCORE: u32 = 1;
+
     #[rstest]
     #[trace]
     #[tokio::test]
     async fn backend(
-        #[values(ProgrammingLanguage::Python, ProgrammingLanguage::C_CPP, ProgrammingLanguage::Java)]
+        #[values(
+            ProgrammingLanguage::Python,
+            ProgrammingLanguage::C_CPP,
+            ProgrammingLanguage::Java
+        )]
         language: ProgrammingLanguage,
         #[files("test_data/scoring/**")] problem_path: PathBuf,
     ) {
@@ -129,11 +127,15 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        let testcase_length = testcases.len();
-
-        let result = score(language, code.as_str(), Some(testcases), None)
-            .await
-            .unwrap();
-        assert!(result.score == testcase_length as u32);
+        let result = score(
+            language,
+            code.as_str(),
+            Some(testcases),
+            None,
+            QUESTION_SCORE,
+        )
+        .await
+        .unwrap();
+        assert!(result.score == QUESTION_SCORE);
     }
 }
