@@ -23,7 +23,7 @@ async fn compile(code_path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn execute_one(project_path: &Path, testcase: &Testcase) -> ExecutionResult {
+fn execute_one(project_path: &Path, testcase: &Testcase) -> (bool, u32) {
     let start = Instant::now();
 
     // Run the code
@@ -41,20 +41,21 @@ fn execute_one(project_path: &Path, testcase: &Testcase) -> ExecutionResult {
     stdin.write_all(testcase.input.as_bytes()).unwrap();
     drop(stdin);
 
-    // Get output and check
     let output = process.wait_with_output().unwrap();
-    println!("{}", String::from_utf8(output.stdout.clone()).unwrap().trim());
-    let is_match = String::from_utf8(output.stdout).unwrap().trim() == testcase.output.trim();
 
     let end = Instant::now();
 
-    ExecutionResult {
-        score: if is_match { 1u32 } else { 0u32 },
-        run_time: (end - start).as_millis() as u32,
-    }
+    let is_matched = String::from_utf8(output.stdout).unwrap().trim() == testcase.output.trim();
+    let run_time = (end - start).as_millis() as u32;
+
+    (is_matched, run_time)
 }
 
-pub async fn execute(code: &str, testcases: Vec<Testcase>) -> anyhow::Result<ExecutionResult> {
+pub async fn execute(
+    code: &str,
+    testcases: Vec<Testcase>,
+    question_score: u32,
+) -> anyhow::Result<ExecutionResult> {
     let code_path = write_to_random_file(code, ProgrammingLanguage::Java).await?;
     let project_path = code_path.parent().unwrap().to_path_buf();
 
@@ -62,14 +63,25 @@ pub async fn execute(code: &str, testcases: Vec<Testcase>) -> anyhow::Result<Exe
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let execution_result = testcases
+        let (is_all_matched, total_run_time) = testcases
             .par_iter()
             .map(|testcase| execute_one(&project_path, testcase))
-            .reduce(ExecutionResult::zero, |acc, current| acc + current);
+            .reduce(
+                || (true, 0),
+                |acc, current| {
+                    let is_matched = acc.0 && current.0;
+                    let run_time = acc.1 + current.1;
 
-        let _ = send.send(execution_result);
+                    (is_matched, run_time)
+                },
+            );
+
+        let _ = send.send((is_all_matched, total_run_time));
     });
-    let execution_result = recv.await?;
+    let (is_all_matched, total_run_time) = recv.await?;
 
-    Ok(execution_result)
+    Ok(ExecutionResult {
+        score: if is_all_matched { question_score } else { 0 },
+        run_time: total_run_time,
+    })
 }
