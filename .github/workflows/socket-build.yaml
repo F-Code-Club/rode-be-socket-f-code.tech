@@ -1,0 +1,45 @@
+on:
+  push:
+    branches: ["develop", "main"]
+
+jobs:
+  socket-build:
+    name: Build source code to Docker image
+    runs-on: ubuntu-22.04 
+    steps:
+      - name: Checkout Develop
+        uses: actions/checkout@v3
+      - name: DockerHub Login
+        run: echo ${{ secrets.F_CODE_DOCKER_PASS }} | docker login -u ${{ secrets.F_CODE_DOCKER_USER }} --password-stdin ${{secrets.F_CODE_DOCKER_REGISTRY_URL}}
+      - name: Build Image And Push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          build-args: |
+            DB_URL=postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@anataarisa.hopto.org/rode-be-test
+          push: true
+          tags: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}/rode-be-socket:${{ github.ref_name == 'main' && 'stable' || 'nightly' }}
+  
+  staging-deploy:
+    name: Deploy Staging Socket API To F-Code Server For Testing
+    runs-on: fcode-japao-runner
+    needs: socket-build
+    env:
+      DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@anataarisa.hopto.org/rode-be-test
+      JWT_SECRET: ${{secrets.JWT_SECRET}}
+      JWT_REFRESH_SECRET: ${{secrets.JWT_SECRET}}
+      PORT: ${{secrets.PORT}}
+      FILE_COUNT_LIMIT: ${{secrets.FILE_COUNT_LIMIT}}
+      FILE_SIZE_LIMIT: ${{secrets.FILE_SIZE_LIMIT}}
+      GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
+      GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
+      GOOGLE_REDIRECT_URL: ${{secrets.GOOGLE_REDIRECT_URL}}
+      GOOGLE_REFRESH_TOKEN: ${{secrets.GOOGLE_REFRESH_TOKEN}}
+      DOCKER_HUB_URL: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}
+    steps:
+    - name: Checkout Develop
+      uses: actions/checkout@v3
+    - name: DockerHub Login
+      run: echo ${{ secrets.F_CODE_DOCKER_PASS }} | docker login -u ${{ secrets.F_CODE_DOCKER_USER }} --password-stdin ${{secrets.F_CODE_DOCKER_REGISTRY_URL}}
+    - name: Deploy Socket
+      run: docker compose -f docker-compose.test.yaml -p rode-battle-be-socket-test up -d
