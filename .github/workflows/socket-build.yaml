@@ -5,7 +5,7 @@ on:
 jobs:
   socket-build:
     name: Build source code to Docker image
-    runs-on: arisa-be-socket
+    runs-on: ubuntu-22.04 
     steps:
       - name: Checkout Develop
         uses: actions/checkout@v3
