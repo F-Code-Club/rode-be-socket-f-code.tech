@@ -12,13 +12,13 @@ use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
 
-use crate::database::model::{Template, Testcase};
+use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
 #[derive(Debug, Serialize)]
 pub struct ExecutionResult {
-    score: u32,
-    run_time: u32,
+    pub score: u32,
+    pub run_time: u32,
 }
 
 fn random_directory() -> PathBuf {
@@ -62,8 +62,8 @@ async fn write_to_random_file(
 pub async fn score(
     language: ProgrammingLanguage,
     code: &str,
-    testcases: Option<Vec<Testcase>>,
-    template: Option<&Template>,
+    testcases: Option<Vec<TestCase>>,
+    template: Option<Template>,
     question_score: u32,
 ) -> anyhow::Result<ExecutionResult> {
     if language == ProgrammingLanguage::Css {
@@ -120,7 +120,7 @@ mod tests {
         let testcases = testcases_raw
             .split("\n\n")
             .array_chunks()
-            .map(|[input, output]| Testcase {
+            .map(|[input, output]| TestCase {
                 input: input.to_string(),
                 output: output.to_string(),
                 ..Default::default()

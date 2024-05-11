@@ -28,6 +28,8 @@ pub const FILE_COUNT_LIMIT: usize = env_as_number_or_default!(usize, "FILE_COUNT
 /// Upload file size limit in byte
 pub const FILE_SIZE_LIMIT: usize = env_as_number_or_default!(usize, "FILE_SIZE_LIMIT", 1024 * 1024);
 pub const UPLOAD_LOCATION: &str = env_or_default!("UPLOAD_LOCATION", "uploads/question-files");
+pub const PUBLIC_TEST_CASE_COUNT: usize =
+    env_as_number_or_default!(usize, "PUBLIC_TEST_CASE_COUNT", 2);
 /// Client keys and refresh token from google api
 pub const GOOGLE_CLIENT_ID: &str = env_or_default!("GOOGLE_CLIENT_ID", "");
 pub const GOOGLE_CLIENT_SECRET: &str = env_or_default!("GOOGLE_CLIENT_SECRET", "");

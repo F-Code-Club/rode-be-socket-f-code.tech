@@ -53,6 +53,6 @@ async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec
 }
 
 #[allow(unused_variables)]
-pub async fn execute(code: &str, template: &Template) -> anyhow::Result<ExecutionResult> {
+pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
     todo!()
 }
