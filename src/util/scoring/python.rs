@@ -6,12 +6,12 @@ use std::process::Stdio;
 use std::str;
 use std::time::Instant;
 
-use crate::database::model::Testcase;
+use crate::database::model::TestCase;
 use crate::enums::ProgrammingLanguage;
 
 use super::{write_to_random_file, ExecutionResult};
 
-fn execute_one(executable_path: &Path, testcase: &Testcase) -> (bool, u32) {
+fn execute_one(executable_path: &Path, testcase: &TestCase) -> (bool, u32) {
     let start = Instant::now();
 
     // Run the code
@@ -40,7 +40,7 @@ fn execute_one(executable_path: &Path, testcase: &Testcase) -> (bool, u32) {
 
 pub async fn execute(
     code: &str,
-    testcases: Vec<Testcase>,
+    testcases: Vec<TestCase>,
     question_score: u32,
 ) -> anyhow::Result<ExecutionResult> {
     let path = write_to_random_file(code, ProgrammingLanguage::Python).await?;
