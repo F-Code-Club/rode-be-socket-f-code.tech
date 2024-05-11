@@ -19,8 +19,7 @@ macro_rules! env_as_number_or_default {
     };
 }
 
-pub const DATABASE_URL: &str =
-    env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
+pub const DATABASE_URL: &str = env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
 pub const JWT_SECRET: &str = env_or_default!("JWT_SECRET", "example");
 pub const PORT: u16 = env_as_number_or_default!(u16, "PORT", 3000);
 pub const FILE_COUNT_LIMIT: usize = env_as_number_or_default!(usize, "FILE_COUNT_LIMIT", 5);
