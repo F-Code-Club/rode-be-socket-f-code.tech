@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -27,10 +25,7 @@ pub struct JWTClaims {
 impl<S: Send + Sync> FromRequestParts<S> for JWTClaims {
     type Rejection = Error;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        _: &S,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await?;
