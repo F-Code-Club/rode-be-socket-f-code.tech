@@ -20,17 +20,20 @@ macro_rules! env_as_number_or_default {
 }
 
 pub const DATABASE_URL: &str = env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
-/// Secret Key For JWT, here is JWT AND REFRESH_JWT 
-pub const JWT_SECRET: &str = env_or_default!("JWT_SECRET", "example");
-pub const JWT_REFRESH_SECRET: &str = env_or_default!("JWT_REFRESH_SECRET", "refresh_example");
+/// Server port
 pub const PORT: u16 = env_as_number_or_default!(u16, "PORT", 3000);
-pub const FILE_COUNT_LIMIT: usize = env_as_number_or_default!(usize, "FILE_COUNT_LIMIT", 5);
-/// Upload file size limit in byte
-pub const FILE_SIZE_LIMIT: usize = env_as_number_or_default!(usize, "FILE_SIZE_LIMIT", 1024 * 1024);
-pub const UPLOAD_LOCATION: &str = env_or_default!("UPLOAD_LOCATION", "uploads/question-files");
+
+pub const JWT_SECRET: &str = env_or_default!("JWT_SECRET", "example");
+/// jwt expired in 1 day
+pub const JWT_EXPIRED_IN: u64 = env_as_number_or_default!(u64, "JWT_EXPIRED_IN", 24 * 60 * 60);
+pub const JWT_REFRESH_SECRET: &str = env_or_default!("JWT_REFRESH_SECRET", "refresh_example");
+/// jwt refresh expired in 1 week
+pub const JWT_REFRESH_EXPIRED_IN: u64 = env_as_number_or_default!(u64, "JWT_REFRESH_EXPIRED_IN", 7 * 24 * 60 * 60);
+
+/// Represent the number of test cases to run when the /scoring/run is called
 pub const PUBLIC_TEST_CASE_COUNT: usize =
     env_as_number_or_default!(usize, "PUBLIC_TEST_CASE_COUNT", 2);
-/// Client keys and refresh token from google api
+
 pub const GOOGLE_CLIENT_ID: &str = env_or_default!("GOOGLE_CLIENT_ID", "");
 pub const GOOGLE_CLIENT_SECRET: &str = env_or_default!("GOOGLE_CLIENT_SECRET", "");
 pub const GOOGLE_REDIRECT_URL: &str = env_or_default!("GOOGLE_REDIRECT_URL", "");
