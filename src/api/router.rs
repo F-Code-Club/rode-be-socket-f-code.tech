@@ -12,6 +12,9 @@ pub fn build(state: Arc<AppState>) -> Router {
     // register routes
     let router = Router::new()
         .route("/", get(controller::ping))
+        .route("/auth/login", post(controller::auth::login))
+        .route("/auth/refresh", post(controller::auth::refresh))
+        .route("/auth/session/socket", get(controller::auth::session_socket))
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit));
 
