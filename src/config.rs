@@ -19,8 +19,9 @@ macro_rules! env_as_number_or_default {
     };
 }
 
-pub const DATABASE_URL: &str = env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
-/// Secret Key For JWT, here is JWT AND REFRESH_JWT 
+pub const DATABASE_URL: &str =
+    env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
+/// Secret Key For JWT, here is JWT AND REFRESH_JWT
 pub const JWT_SECRET: &str = env_or_default!("JWT_SECRET", "example");
 pub const JWT_REFRESH_SECRET: &str = env_or_default!("JWT_REFRESH_SECRET", "refresh_example");
 pub const PORT: u16 = env_as_number_or_default!(u16, "PORT", 3000);

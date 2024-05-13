@@ -17,7 +17,7 @@ pub fn build(state: Arc<AppState>) -> Router {
         .route("/", get(controller::ping))
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit))
-        .route("/team/join", post(controller::team::join));
+        .route("/team/join", post(controller::room::join));
 
     let router = router
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));

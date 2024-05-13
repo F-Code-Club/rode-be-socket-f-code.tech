@@ -11,11 +11,17 @@ pub struct Member {
 }
 
 impl Member {
-    pub async fn get_one_by_account_id(account_id: Uuid, database: &PgPool) -> anyhow::Result<Member> {
-        let member =
-            sqlx::query_as!(Member, "SELECT * FROM members WHERE account_id = $1", account_id)
-                .fetch_one(database)
-                .await?;
+    pub async fn get_one_by_account_id(
+        account_id: Uuid,
+        database: &PgPool,
+    ) -> anyhow::Result<Member> {
+        let member = sqlx::query_as!(
+            Member,
+            "SELECT * FROM members WHERE account_id = $1",
+            account_id
+        )
+        .fetch_one(database)
+        .await?;
 
         Ok(member)
     }

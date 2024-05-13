@@ -27,8 +27,8 @@ impl Room {
 
         Ok(room)
     }
-    
+
     pub fn is_open(&self, time: NaiveDateTime) -> bool {
-        self.open_time < time && time < self.close_time 
+        self.open_time < time && time < self.close_time
     }
 }
