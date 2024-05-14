@@ -16,6 +16,16 @@ use crate::{Error, Result};
 
 use super::Data;
 
+#[utoipa::path (
+    post,
+    tag = "Scoring",
+    path = "/scoring/submit",
+    responses (
+        (status = 200, description = "Successfully!",body = ExecutionResult),
+        (status = 400, description = "Bad request!"),
+        (status = 401, description = "User's token is not authorized or missed!")
+    )
+)]
 pub async fn submit(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,

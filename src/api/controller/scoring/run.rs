@@ -14,6 +14,18 @@ use crate::{config, Error, Result};
 use super::Data;
 
 #[axum::debug_handler]
+#[utoipa::path (
+    post,
+    tag = "Scoring",
+    path = "/scoring/run",
+    security(("api_key" = ["edit:items"])),
+    request_body = Data,
+    responses (
+        (status = 200, description = "Successfully!",body = ExecutionResult),
+        (status = 400, description = "Bad request!"),
+        (status = 401, description = "Unauthorized!")
+    )
+)]
 pub async fn run(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
