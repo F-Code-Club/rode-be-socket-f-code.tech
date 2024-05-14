@@ -159,17 +159,14 @@ mod tests {
         template_path.push("template.png");
 
         let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
-        // Convert the image to a byte vector
         let mut buffer = Vec::new();
         template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
 
-        // Convert the byte vector to a byte slice
         let percent:f32 = match css::render_diff_image(&buffer, html).await? {
-            (match_percent, _diff_image_buffer) => match_percent,
+            (match_percent, _) => match_percent,
         };
 
-        // Validate the result
-        assert!(percent > 90.0); // Assuming a positive match percent indicates success
+        assert!(percent > 90.0); 
         Ok(())
     }
 }
