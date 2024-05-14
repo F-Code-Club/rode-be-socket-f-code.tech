@@ -145,7 +145,7 @@ mod tests {
     async fn frontend(
         #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
         #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<()> {
         use image::io::Reader as ImageReader;
         use image::DynamicImage;
         use std::io::Cursor;
@@ -164,14 +164,8 @@ mod tests {
         template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
 
         // Convert the byte vector to a byte slice
-        let byte_slice: &[u8] = &buffer;
-        let score = css::render_diff_image(byte_slice, html).await;
-        let percent:f32 = match score {
-            Ok((match_percent, _diff_image_buffer)) => match_percent,
-            Err(error) => {
-                println!("{}", error);
-                return Err(error.into());
-            }
+        let percent:f32 = match css::render_diff_image(&buffer, html).await? {
+            (match_percent, _diff_image_buffer) => match_percent,
         };
 
         // Validate the result
