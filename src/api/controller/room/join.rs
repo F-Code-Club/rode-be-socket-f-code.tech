@@ -1,6 +1,7 @@
 use axum::{debug_handler, extract::State, Json};
 use chrono::Local;
 use std::sync::Arc;
+use utoipa::ToSchema;
 
 use serde::Deserialize;
 
@@ -11,7 +12,7 @@ use crate::{
     Error, Result,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct JoinRoomInfo {
     #[serde(rename = "roomId")]
     room_id: i32,
@@ -20,6 +21,17 @@ pub struct JoinRoomInfo {
 }
 
 #[debug_handler]
+#[utoipa::path (
+    post,
+    tag = "Room",
+    path = "/room/join",
+    responses (
+        (status = 200, description = "Successfully!"),
+        (status = 400, description = "Bad request!"),
+        (status = 401, description = "Unauthorized!"),
+        (status = 404, description = "The room is not found!"),
+    )
+)]
 pub async fn join(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
