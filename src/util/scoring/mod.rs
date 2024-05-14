@@ -138,4 +138,44 @@ mod tests {
         .unwrap();
         assert!(result.score == QUESTION_SCORE);
     }
+
+    #[rstest]
+    #[trace]
+    #[tokio::test]
+    async fn frontend(
+        #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
+        #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        use image::io::Reader as ImageReader;
+        use image::DynamicImage;
+        use std::io::Cursor;
+
+        let mut html_path = problem_path.clone();
+        html_path.push("source");
+        html_path.set_extension("html");
+        let html = String::from_utf8(fs::read(html_path).unwrap()).unwrap();
+
+        let mut template_path: PathBuf = problem_path;
+        template_path.push("template.png");
+
+        let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
+        // Convert the image to a byte vector
+        let mut buffer = Vec::new();
+        template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
+
+        // Convert the byte vector to a byte slice
+        let byte_slice: &[u8] = &buffer;
+        let score = css::render_diff_image(byte_slice, html).await;
+        let percent:f32 = match score {
+            Ok((match_percent, _diff_image_buffer)) => match_percent,
+            Err(error) => {
+                println!("{}", error);
+                return Err(error.into());
+            }
+        };
+
+        // Validate the result
+        assert!(percent > 90.0); // Assuming a positive match percent indicates success
+        Ok(())
+    }
 }
