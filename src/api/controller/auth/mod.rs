@@ -34,7 +34,7 @@ impl TokenPair {
             &Header::default(),
             &JWTClaims {
                 sub: id,
-                exp: now + config::JWT_EXPIRED_IN,
+                exp: now + *config::JWT_EXPIRED_IN,
             },
             &ENCODING_KEY,
         )?;
@@ -42,7 +42,7 @@ impl TokenPair {
             &Header::default(),
             &JWTClaims {
                 sub: id,
-                exp: now + config::JWT_REFRESH_EXPIRED_IN,
+                exp: now + *config::JWT_REFRESH_EXPIRED_IN,
             },
             &REFRESH_ENCODING_KEY,
         )?;
