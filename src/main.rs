@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState::new().await?);
     let app = api::router::build(state);
     let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::SERVER_PORT)).await?;
+    println!("R.ODE Socket Is Started And Listening On Port: {}", *config::SERVER_PORT);
     axum::serve(listener, app).await?;
 
     Ok(())
