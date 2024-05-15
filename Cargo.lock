@@ -2390,6 +2390,7 @@ dependencies = [
  "jsonwebtoken",
  "lazy_static",
  "mime_guess",
+ "once_cell",
  "pixelmatch",
  "rayon",
  "rstest",

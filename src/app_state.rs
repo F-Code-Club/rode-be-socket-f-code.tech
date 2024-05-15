@@ -14,7 +14,7 @@ pub struct AppState {
 }
 impl AppState {
     pub async fn new() -> Result<Self> {
-        let pool = PgPool::connect(config::DATABASE_URL).await?;
+        let pool = PgPool::connect(&config::DATABASE_URL).await?;
 
         Ok(Self {
             database: pool,
