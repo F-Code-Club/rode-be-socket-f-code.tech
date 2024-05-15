@@ -20,7 +20,7 @@ pub static JWT_SECRET: Lazy<String> = Lazy::new(|| env_or_default("JWT_SECRET", 
 
 pub static PUBLIC_CORS_DOMAIN: Lazy<String> = Lazy::new(|| env_or_default("PUBLIC_CORS_DOMAIN", "fe.domain@f-code.tech".to_string()));
 
-pub static LOCAL_CORS_DOMAIN: Lazy<String> = Lazy::new(|| env_or_default("LOCAL_CORS_DOMAIN", "localhost:3000".to_string()));
+pub static LOCAL_CORS_DOMAIN: Lazy<String> = Lazy::new(|| env_or_default("LOCAL_CORS_DOMAIN", "http://localhost:3000".to_string()));
 /// jwt expired in 1 day
 pub static JWT_EXPIRED_IN: Lazy<u64> = Lazy::new(|| env_or_default("JWT_EXPIRED_IN", 24 * 60 * 60));
 pub static JWT_REFRESH_SECRET: Lazy<String> = Lazy::new(|| env_or_default("JWT_REFRESH_SECRET", "refresh_example".to_string()));
