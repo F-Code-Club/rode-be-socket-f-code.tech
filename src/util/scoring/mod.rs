@@ -138,4 +138,35 @@ mod tests {
         .unwrap();
         assert!(result.score == QUESTION_SCORE);
     }
+
+    #[rstest]
+    #[trace]
+    #[tokio::test]
+    async fn frontend(
+        #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
+        #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
+    ) -> anyhow::Result<()> {
+        use image::io::Reader as ImageReader;
+        use image::DynamicImage;
+        use std::io::Cursor;
+
+        let mut html_path = problem_path.clone();
+        html_path.push("source");
+        html_path.set_extension("html");
+        let html = String::from_utf8(fs::read(html_path).unwrap()).unwrap();
+
+        let mut template_path: PathBuf = problem_path;
+        template_path.push("template.png");
+
+        let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
+        let mut buffer = Vec::new();
+        template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
+
+        let percent:f32 = match css::render_diff_image(&buffer, html).await? {
+            (match_percent, _) => match_percent,
+        };
+
+        assert!(percent > 90.0); 
+        Ok(())
+    }
 }
