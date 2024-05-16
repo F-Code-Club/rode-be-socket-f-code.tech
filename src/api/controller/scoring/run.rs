@@ -21,9 +21,9 @@ use super::Data;
     security(("api_key" = ["edit:items"])),
     request_body = Data,
     responses (
-        (status = 200, description = "Successfully!",body = ExecutionResult),
+        (status = 200, description = "Scoring successfully!",body = ExecutionResult),
         (status = 400, description = "Bad request!"),
-        (status = 401, description = "Unauthorized!")
+        (status = 401, description = "User can't be authorized!")
     )
 )]
 pub async fn run(
