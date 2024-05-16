@@ -1,5 +1,5 @@
 mod c_cpp;
-mod css;
+pub mod css;
 mod java;
 mod python;
 
@@ -11,11 +11,12 @@ use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
+use utoipa::ToSchema;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
     pub score: u32,
     pub run_time: u32,

@@ -14,6 +14,18 @@ use crate::{config, Error, Result};
 use super::Data;
 
 #[axum::debug_handler]
+#[utoipa::path (
+    post,
+    tag = "Scoring",
+    path = "/scoring/run",
+    security(("api_key" = ["edit:items"])),
+    request_body = Data,
+    responses (
+        (status = 200, description = "Scoring successfully!",body = ExecutionResult),
+        (status = 400, description = "Bad request!"),
+        (status = 401, description = "User can't be authorized!")
+    )
+)]
 pub async fn run(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
@@ -30,10 +42,7 @@ pub async fn run(
     Ok(execution_result)
 }
 
-async fn run_internal(
-    state: Arc<AppState>,
-    data: Data,
-) -> anyhow::Result<Json<ExecutionResult>> {
+async fn run_internal(state: Arc<AppState>, data: Data) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = Local::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
