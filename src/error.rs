@@ -1,10 +1,11 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use std::{collections::HashMap, fmt::Display};
+use utoipa::ToSchema;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, ToSchema)]
 pub enum Error {
     Unauthorized { message: String },
     Other(anyhow::Error),
@@ -41,12 +42,16 @@ impl IntoResponse for Error {
 
 impl From<axum_extra::typed_header::TypedHeaderRejection> for Error {
     fn from(value: axum_extra::typed_header::TypedHeaderRejection) -> Self {
-        Error::Unauthorized { message: value.to_string() }
+        Error::Unauthorized {
+            message: value.to_string(),
+        }
     }
 }
 impl From<jsonwebtoken::errors::Error> for Error {
     fn from(value: jsonwebtoken::errors::Error) -> Self {
-        Error::Unauthorized { message: value.to_string() }
+        Error::Unauthorized {
+            message: value.to_string(),
+        }
     }
 }
 impl From<anyhow::Error> for Error {

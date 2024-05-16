@@ -1,5 +1,5 @@
 mod ping;
+pub mod room;
 pub mod scoring;
-pub mod auth;
 
 pub use ping::*;

@@ -8,14 +8,14 @@ pub enum RoomKind {
     Backend,
     #[sqlx(rename = "FE")]
     #[serde(rename = "FE")]
-    Frontend
+    Frontend,
 }
 impl From<String> for RoomKind {
     fn from(value: String) -> Self {
         match value.as_str() {
             "BE" => Self::Backend,
             "FE" => Self::Frontend,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }

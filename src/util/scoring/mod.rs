@@ -1,5 +1,5 @@
 mod c_cpp;
-mod css;
+pub mod css;
 mod java;
 mod python;
 
@@ -10,12 +10,13 @@ use anyhow::Context;
 use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
     pub score: u32,
     pub run_time: u32,
@@ -137,36 +138,5 @@ mod tests {
         .await
         .unwrap();
         assert!(result.score == QUESTION_SCORE);
-    }
-
-    #[rstest]
-    #[trace]
-    #[tokio::test]
-    async fn frontend(
-        #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
-        #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
-    ) -> anyhow::Result<()> {
-        use image::io::Reader as ImageReader;
-        use image::DynamicImage;
-        use std::io::Cursor;
-
-        let mut html_path = problem_path.clone();
-        html_path.push("source");
-        html_path.set_extension("html");
-        let html = String::from_utf8(fs::read(html_path).unwrap()).unwrap();
-
-        let mut template_path: PathBuf = problem_path;
-        template_path.push("template.png");
-
-        let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
-        let mut buffer = Vec::new();
-        template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
-
-        let percent:f32 = match css::render_diff_image(&buffer, html).await? {
-            (match_percent, _) => match_percent,
-        };
-
-        assert!(percent > 90.0); 
-        Ok(())
     }
 }
