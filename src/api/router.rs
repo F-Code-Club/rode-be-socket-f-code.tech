@@ -16,7 +16,6 @@ pub fn build(state: Arc<AppState>) -> Router {
     let allow_origins = vec![
                         config::PUBLIC_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
                 config::LOCAL_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
-                "http://127.0.0.1:5500".parse::<HeaderValue>().unwrap()
     ];
 
     // register routes
