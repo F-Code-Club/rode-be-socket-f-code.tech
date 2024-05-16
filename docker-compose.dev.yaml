@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+  postgresql-rode:
+    container_name: postgresql-rode-database
+    image: postgres:13.14-bullseye
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    networks:
+      - rode-networks
+
+  pg-admin-rode:
+    container_name: poesgres-admin-local
+    image: elestio/pgadmin:REL-8_6
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGA_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGA_PASSWORD}
+      PGADMIN_LISTEN_PORT: ${PGA_PORT}
+    networks:
+      - rode-networks
+    ports:
+      - ${PGA_PORT}:${PGA_PORT}
+
+  rode-battle-socket:
+    container_name: rode-battle-socket-management
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      DATABASE_URL: poesgres://${DB_USERNAME}:${DB_PASSWORD}@postgresql-rode/${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRED_IN: ${JWT_EXPIRED_IN}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRED_IN: ${JWT_REFRESH_EXPIRED_IN}
+      PUBLIC_TEST_CASE_COUNT: ${{PUBLIC_TEST_CASE_COUNT}}
+      SERVER_PORT: ${SERVER_PORT}
+      PUBLIC_CORS_DOMAIN: ${PUBLIC_CORS_DOMAIN}
+      LOCAL_CORS_DOMAIN: ${LOCAL_CORS_DOMAIN}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL}
+      GOOGLE_REFRESH_TOKEN: ${GOOGLE_REFRESH_TOKEN}
+    networks:
+      - rode-networks
+
+networks:
+  rode-networks:
