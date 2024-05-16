@@ -21,7 +21,7 @@ use super::Data;
     tag = "Scoring",
     path = "/scoring/submit",
     responses (
-        (status = 200, description = "Successfully!",body = ExecutionResult),
+        (status = 200, description = "Submit successfully!",body = ExecutionResult),
         (status = 400, description = "Bad request!"),
         (status = 401, description = "User's token is not authorized or missed!")
     )
