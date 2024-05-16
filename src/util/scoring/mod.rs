@@ -10,12 +10,13 @@ use anyhow::Context;
 use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
     pub score: u32,
     pub run_time: u32,
