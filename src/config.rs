@@ -1,37 +1,36 @@
-macro_rules! env_or_default {
-    ($env_name:literal, $default:expr) => {
-        match option_env!($env_name) {
-            Some(value) => value,
-            None => $default,
-        }
-    };
-}
-macro_rules! env_as_number_or_default {
-    ($number_type:ty, $env_name:literal, $default:expr) => {
-        match option_env!($env_name) {
-            #[allow(clippy::from_str_radix_10)]
-            Some(value) => match <$number_type>::from_str_radix(value, 10) {
-                Ok(value) => value,
-                Err(_) => $default,
-            },
-            None => $default,
-        }
-    };
+use std::{env, str::FromStr};
+
+use once_cell::sync::Lazy;
+
+fn env_or_default<T: FromStr>(env_name: &'static str, default: T) -> T {
+    match env::var(env_name) {
+        Err(_) => default,
+        Ok(raw) => match raw.parse() {
+            Ok(value) => value,
+            Err(_) => default,
+        },
+    }
 }
 
-pub const DATABASE_URL: &str = env_or_default!("DATABASE_URL", "postgres://user:password@host/database");
-/// Secret Key For JWT, here is JWT AND REFRESH_JWT 
-pub const JWT_SECRET: &str = env_or_default!("JWT_SECRET", "example");
-pub const JWT_REFRESH_SECRET: &str = env_or_default!("JWT_REFRESH_SECRET", "refresh_example");
-pub const PORT: u16 = env_as_number_or_default!(u16, "PORT", 3000);
-pub const FILE_COUNT_LIMIT: usize = env_as_number_or_default!(usize, "FILE_COUNT_LIMIT", 5);
-/// Upload file size limit in byte
-pub const FILE_SIZE_LIMIT: usize = env_as_number_or_default!(usize, "FILE_SIZE_LIMIT", 1024 * 1024);
-pub const UPLOAD_LOCATION: &str = env_or_default!("UPLOAD_LOCATION", "uploads/question-files");
-pub const PUBLIC_TEST_CASE_COUNT: usize =
-    env_as_number_or_default!(usize, "PUBLIC_TEST_CASE_COUNT", 2);
-/// Client keys and refresh token from google api
-pub const GOOGLE_CLIENT_ID: &str = env_or_default!("GOOGLE_CLIENT_ID", "");
-pub const GOOGLE_CLIENT_SECRET: &str = env_or_default!("GOOGLE_CLIENT_SECRET", "");
-pub const GOOGLE_REDIRECT_URL: &str = env_or_default!("GOOGLE_REDIRECT_URL", "");
-pub const GOOGLE_REFRESH_TOKEN: &str = env_or_default!("GOOGLE_REFRESH_TOKEN", "");
+pub static DATABASE_URL: Lazy<String> = Lazy::new(|| env_or_default("DATABASE_URL", "postgres://user:password@host/database".to_string()));
+
+pub static SERVER_PORT: Lazy<u16> = Lazy::new(|| env_or_default("SERVER_PORT", 3000));
+
+pub static JWT_SECRET: Lazy<String> = Lazy::new(|| env_or_default("JWT_SECRET", "example".to_string()));
+
+pub static PUBLIC_CORS_DOMAIN: Lazy<String> = Lazy::new(|| env_or_default("PUBLIC_CORS_DOMAIN", "fe.domain@f-code.tech".to_string()));
+
+pub static LOCAL_CORS_DOMAIN: Lazy<String> = Lazy::new(|| env_or_default("LOCAL_CORS_DOMAIN", "http://localhost:3000".to_string()));
+/// jwt expired in 1 day
+pub static JWT_EXPIRED_IN: Lazy<u64> = Lazy::new(|| env_or_default("JWT_EXPIRED_IN", 24 * 60 * 60));
+pub static JWT_REFRESH_SECRET: Lazy<String> = Lazy::new(|| env_or_default("JWT_REFRESH_SECRET", "refresh_example".to_string()));
+/// jwt refresh expired in 1 week
+pub static JWT_REFRESH_EXPIRED_IN: Lazy<u64> = Lazy::new(|| env_or_default("JWT_REFRESH_EXPIRED_IN", 7 * 24 * 60 * 60));
+
+/// Represent the number of test cases to run when the /scoring/run is called
+pub static PUBLIC_TEST_CASE_COUNT: Lazy<usize> = Lazy::new(|| env_or_default("PUBLIC_TEST_CASE_COUNT", 2));
+
+pub static GOOGLE_CLIENT_ID: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_CLIENT_ID", "".to_string()));
+pub static GOOGLE_CLIENT_SECRET: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_CLIENT_SECRET", "".to_string()));
+pub static GOOGLE_REDIRECT_URL: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_REDIRECT_URL", "".to_string()));
+pub static GOOGLE_REFRESH_TOKEN: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_REFRESH_TOKEN", "".to_string()));

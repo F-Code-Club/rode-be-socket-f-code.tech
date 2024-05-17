@@ -1,10 +1,11 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use std::{collections::HashMap, fmt::Display};
+use utoipa::ToSchema;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, ToSchema)]
 pub enum Error {
     Unauthorized { message: String },
     Other(anyhow::Error),

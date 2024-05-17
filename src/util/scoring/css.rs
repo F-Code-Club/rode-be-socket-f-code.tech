@@ -5,6 +5,8 @@ use chromiumoxide::cdp::browser_protocol::page::{
 use chromiumoxide::page::ScreenshotParams;
 use chromiumoxide::{handler::viewport::Viewport, Browser, BrowserConfig};
 use futures::StreamExt;
+use image::{GenericImageView, ImageFormat};
+use pixelmatch::pixelmatch;
 
 use super::ExecutionResult;
 use crate::database::model::Template;
@@ -50,6 +52,39 @@ async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec
     handle.await?;
 
     Ok(image_buffer)
+}
+
+#[tracing::instrument(err)]
+pub async fn render_diff_image(
+    question_image_buffer: &[u8],
+    html: String,
+) -> anyhow::Result<(f32, Vec<u8>)> {
+    let question_image =
+        image::load_from_memory_with_format(question_image_buffer, ImageFormat::Png)?;
+    let (width, height) = question_image.dimensions();
+    let answer_image_buffer = render_image(&html, width, height).await?;
+
+    let mut diff_image_buffer = Vec::with_capacity((height * width) as usize);
+
+    match pixelmatch(
+        question_image_buffer,
+        answer_image_buffer.as_slice(),
+        Some(&mut diff_image_buffer),
+        Some(width),
+        Some(height),
+        Some(pixelmatch::Options {
+            threshold: 0.1,
+            ..Default::default()
+        }),
+    ) {
+        Err(error) => {
+            bail!(format!("{}", error))
+        }
+        Ok(diff) => {
+            let match_percent = (1. - (diff as f32) / ((width * height) as f32)) * 100.;
+            Ok((match_percent, diff_image_buffer))
+        }
+    }
 }
 
 #[allow(unused_variables)]
