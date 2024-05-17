@@ -27,6 +27,7 @@ pub fn build(state: Arc<AppState>) -> Router {
             "/auth/session/socket",
             get(controller::auth::session_socket),
         )
+        .route("/room/join", post(controller::room::join))
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit))
         .route(

@@ -10,6 +10,7 @@ use crate::{enums, util};
         controller::scoring::run,
         controller::scoring::submit,
         controller::scoring::render_diff_image,
+        controller::room::join,
         controller::auth::login,
         controller::auth::refresh,
         controller::auth::session_socket
@@ -17,6 +18,7 @@ use crate::{enums, util};
     components(schemas(
         controller::scoring::SubmitData,
         controller::scoring::RenderDiffImageData,
+        controller::room::JoinRoomInfo,
         controller::auth::LoginData,
         controller::auth::TokenPair,
         enums::ProgrammingLanguage,
