@@ -1,7 +1,6 @@
 use utoipa::OpenApi;
 
 use super::controller;
-use crate::Error;
 use crate::{enums, util};
 
 #[derive(OpenApi)]
@@ -10,21 +9,19 @@ use crate::{enums, util};
         controller::ping,
         controller::scoring::run,
         controller::scoring::submit,
-       /*  controller::scoring::render_diff, */
-        controller::room::join,
+        controller::scoring::render_diff_image,
         controller::auth::login,
         controller::auth::refresh,
         controller::auth::session_socket
     ),
     components(schemas(
-        controller::scoring::Data,
-        controller::scoring::RenderDiffParam,
-        controller::room::JoinRoomInfo,
+        controller::scoring::SubmitData,
+        controller::scoring::RenderDiffImageData,
         controller::auth::LoginData,
         controller::auth::TokenPair,
         enums::ProgrammingLanguage,
         util::scoring::ExecutionResult,
-        Error,
+        crate::error::ErrorResponse,
     ))
 )]
 pub struct ApiDoc;

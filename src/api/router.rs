@@ -29,11 +29,10 @@ pub fn build(state: Arc<AppState>) -> Router {
         )
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit))
-        // .route(
-        //     "/scoring/render_diff",
-        //     post(controller::scoring::render_diff),
-        // )
-        .route("/team/join", post(controller::room::join))
+        .route(
+            "/scoring/render_diff",
+            post(controller::scoring::render_diff_image),
+        )
         .layer(
             CorsLayer::new()
                 .allow_origin(allow_origins)
