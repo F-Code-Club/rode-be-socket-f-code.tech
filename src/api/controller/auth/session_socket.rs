@@ -15,6 +15,16 @@ lazy_static! {
     static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
 }
 
+#[utoipa::path (
+    get,
+    tag = "Auth",
+    path = "/auth/session/socket",
+    responses (
+        (status = 200, description = "Connect to websocket successfully!"),
+        (status = 400, description = "Bad request!"),
+    )
+)]
+
 pub async fn session_socket(
     State(state): State<Arc<AppState>>,
     ws: WebSocketUpgrade,

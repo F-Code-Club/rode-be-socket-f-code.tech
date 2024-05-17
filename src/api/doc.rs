@@ -12,11 +12,16 @@ use crate::{enums, util};
         controller::scoring::submit,
         controller::scoring::render_diff,
         controller::room::join,
+        controller::auth::login,
+        controller::auth::refresh,
+        controller::auth::session_socket
     ),
     components(schemas(
         controller::scoring::Data,
         controller::scoring::RenderDiffParam,
         controller::room::JoinRoomInfo,
+        controller::auth::LoginData,
+        controller::auth::TokenPair,
         enums::ProgrammingLanguage,
         util::scoring::ExecutionResult,
         Error,
