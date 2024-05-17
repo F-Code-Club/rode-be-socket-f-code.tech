@@ -17,13 +17,13 @@ lazy_static! {
     post,
     tag = "Auth",
     path = "/auth/refresh",
-    request_body(content = String, description = "Paramater is refresh token string", content_type = "application/json"),
+    request_body(content = String, description = "Refresh token"),
     responses (
-        (status = 200, description = "Refresh successfully!",body = TokenPair),
-        (status = 400, description = "Bad request!"),
-        (status = 401, description = "User's refresh token is not authorized or missed!")
+        (status = StatusCode::OK, description = "New token pair", body = TokenPair),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
     )
 )]
+/// Generate a new token pair with extended expired time using refresh token
 pub async fn refresh(Json(refresh_token): Json<String>) -> Result<Json<TokenPair>> {
     let token_pair = refresh_internal(refresh_token).await?;
 
