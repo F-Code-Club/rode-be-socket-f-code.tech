@@ -22,9 +22,8 @@ pub struct LoginData {
     path = "/auth/login",
     request_body = LoginData,
     responses (
-        (status = 200, description = "Login successfully!",body = TokenPair),
-        (status = 400, description = "Bad request!"),
-        (status = 401, description = "User's token pair is not authorized or missed!")
+        (status = StatusCode::OK, description = "Login successfully!", body = TokenPair),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
     )
 )]
 pub async fn login(
