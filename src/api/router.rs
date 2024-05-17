@@ -14,13 +14,19 @@ use crate::{app_state::AppState, config};
 
 pub fn build(state: Arc<AppState>) -> Router {
     let allow_origins = vec![
-                        config::PUBLIC_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
-                config::LOCAL_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
+        config::PUBLIC_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
+        config::LOCAL_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
     ];
 
     // register routes
     let router = Router::new()
         .route("/", get(controller::ping))
+        .route("/auth/login", post(controller::auth::login))
+        .route("/auth/refresh", post(controller::auth::refresh))
+        .route(
+            "/auth/session/socket",
+            post(controller::auth::session_socket),
+        )
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit))
         .route("/team/join", post(controller::room::join))
