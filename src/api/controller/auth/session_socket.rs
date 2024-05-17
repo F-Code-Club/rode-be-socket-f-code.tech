@@ -20,8 +20,9 @@ lazy_static! {
     tag = "Auth",
     path = "/auth/session/socket",
     responses (
-        (status = 200, description = "Connect to websocket successfully!"),
-        (status = 400, description = "Bad request!"),
+        (status = 101, description = "Connect to websocket successfully!"),
+        (status = 1006, description = "Connection is closed abnormally!"),
+        (status = 400, description = "Bad request!")
     )
 )]
 
