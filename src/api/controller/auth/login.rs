@@ -3,18 +3,29 @@ use std::sync::Arc;
 use axum::Json;
 use axum::{extract::State, Form};
 use serde::Deserialize;
+use utoipa::ToSchema;
 
 use crate::app_state::AppState;
 use crate::Result;
 
 use super::TokenPair;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct LoginData {
     email: String,
     password: String,
 }
 
+#[utoipa::path (
+    post,
+    tag = "Auth",
+    path = "/auth/login",
+    request_body = LoginData,
+    responses (
+        (status = StatusCode::OK, description = "Login successfully!", body = TokenPair),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
+    )
+)]
 pub async fn login(
     State(state): State<Arc<AppState>>,
     Form(login_data): Form<LoginData>,

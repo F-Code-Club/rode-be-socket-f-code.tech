@@ -14,9 +14,7 @@ use crate::{
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct JoinRoomInfo {
-    #[serde(rename = "roomId")]
     room_id: i32,
-    #[serde(rename = "code")]
     room_code: String,
 }
 
@@ -26,10 +24,14 @@ pub struct JoinRoomInfo {
     tag = "Room",
     path = "/room/join",
     responses (
-        (status = 200, description = "Successfully!"),
-        (status = 400, description = "Bad request!"),
-        (status = 401, description = "Unauthorized!"),
-        (status = 404, description = "The room is not found!"),
+        (status = Status::OK, description = "Successfully join a room!"),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
+        (
+            status = StatusCode::UNAUTHORIZED,
+            description = "User's token is not authorized or missed!",
+            body = ErrorResponse,
+            example = json!({"status": 401, "message": "Invalid token", "details": {}})
+        )
     )
 )]
 pub async fn join(

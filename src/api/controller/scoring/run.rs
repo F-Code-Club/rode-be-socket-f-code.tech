@@ -11,25 +11,29 @@ use crate::enums::RoomKind;
 use crate::util::{self, scoring::ExecutionResult};
 use crate::{config, Error, Result};
 
-use super::Data;
+use super::SubmitData;
 
-#[axum::debug_handler]
 #[utoipa::path (
     post,
     tag = "Scoring",
     path = "/scoring/run",
-    security(("api_key" = ["edit:items"])),
-    request_body = Data,
+    request_body = SubmitData,
     responses (
-        (status = 200, description = "Scoring successfully!",body = ExecutionResult),
-        (status = 400, description = "Bad request!"),
-        (status = 401, description = "User can't be authorized!")
+        (status = StatusCode::OK, description = "Score of the code", body = ExecutionResult),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
+        (
+            status = StatusCode::UNAUTHORIZED,
+            description = "User's token is not authorized or missed!",
+            body = ErrorResponse,
+            example = json!({"status": 401, "message": "Invalid token", "details": {}})
+        )
     )
 )]
+/// Run a small part of the test cases and get the result without submitting it
 pub async fn run(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
-    Json(data): Json<Data>,
+    Json(data): Json<SubmitData>,
 ) -> Result<Json<ExecutionResult>> {
     let _ = Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
@@ -42,7 +46,7 @@ pub async fn run(
     Ok(execution_result)
 }
 
-async fn run_internal(state: Arc<AppState>, data: Data) -> anyhow::Result<Json<ExecutionResult>> {
+async fn run_internal(state: Arc<AppState>, data: SubmitData) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = Local::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");

@@ -2,9 +2,10 @@
     get,
     path = "/",
     responses(
-        (status = 200, description = "Return pong", body = &'static str)
+        (status = StatusCode::OK, description = "Return pong", body = &'static str)
     )
 )]
+/// Used to test if the server is running
 pub async fn ping() -> &'static str {
     "Pong"
 }

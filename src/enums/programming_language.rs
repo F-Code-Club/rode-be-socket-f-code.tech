@@ -7,6 +7,8 @@ use utoipa::ToSchema;
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ProgrammingLanguage {
     #[allow(non_camel_case_types)]
+    #[sqlx(rename = "C_CPP")]
+    #[serde(rename = "C_CPP")]
     C_CPP,
     Python,
     Java,
