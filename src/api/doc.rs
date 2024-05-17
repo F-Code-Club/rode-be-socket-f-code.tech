@@ -10,7 +10,7 @@ use crate::{enums, util};
         controller::ping,
         controller::scoring::run,
         controller::scoring::submit,
-        controller::scoring::render_diff,
+       /*  controller::scoring::render_diff, */
         controller::room::join,
         controller::auth::login,
         controller::auth::refresh,
