@@ -18,7 +18,6 @@ use super::Data;
     post,
     tag = "Scoring",
     path = "/scoring/run",
-    security(("api_key" = ["edit:items"])),
     request_body = Data,
     responses (
         (status = 200, description = "Scoring successfully!",body = ExecutionResult),
