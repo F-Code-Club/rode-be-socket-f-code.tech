@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use axum::extract::State;
 use axum::Json;
 use chrono::Local;
