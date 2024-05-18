@@ -5,7 +5,7 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct Member {
     pub id: i32,
-    pub team_id: Option<i32>,
+    pub team_id: i32,
     pub account_id: Uuid,
     pub has_join_room: bool,
 }
