@@ -31,7 +31,8 @@ pub struct RenderDiffImageData {
             body = ErrorResponse,
             example = json!({"status": 401, "message": "Invalid token", "details": {}})
         )
-    )
+    ),
+    security(("jwt_token" = []))
 )]
 /// Create an image representing the differences between the rendered html code and the image from question
 pub async fn render_diff_image(

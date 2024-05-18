@@ -29,7 +29,8 @@ use super::SubmitData;
             body = ErrorResponse,
             example = json!({"status": 401, "message": "Invalid token", "details": {}})
         )
-    )
+    ),
+    security(("jwt_token" = []))
 )]
 /// Submit the code and get the score
 pub async fn submit(

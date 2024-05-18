@@ -1,7 +1,28 @@
-use utoipa::OpenApi;
+use utoipa::{
+    openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
+    Modify, OpenApi,
+};
 
 use super::controller;
 use crate::{enums, util};
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "jwt_token",
+                SecurityScheme::Http(
+                    HttpBuilder::new()
+                        .scheme(HttpAuthScheme::Bearer)
+                        .bearer_format("JWT")
+                        .build(),
+                ),
+            )
+        }
+    }
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -15,6 +36,7 @@ use crate::{enums, util};
         controller::auth::refresh,
         controller::auth::session_socket
     ),
+    modifiers(&SecurityAddon),
     components(schemas(
         controller::scoring::SubmitData,
         controller::scoring::RenderDiffImageData,

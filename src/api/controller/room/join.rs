@@ -32,7 +32,8 @@ pub struct JoinRoomInfo {
             body = ErrorResponse,
             example = json!({"status": 401, "message": "Invalid token", "details": {}})
         )
-    )
+    ),
+    security(("jwt_token" = []))
 )]
 pub async fn join(
     State(state): State<Arc<AppState>>,

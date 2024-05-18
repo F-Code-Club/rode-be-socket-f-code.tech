@@ -27,7 +27,8 @@ use super::SubmitData;
             body = ErrorResponse,
             example = json!({"status": 401, "message": "Invalid token", "details": {}})
         )
-    )
+    ),
+    security(("jwt_token" = []))
 )]
 /// Run a small part of the test cases and get the result without submitting it
 pub async fn run(
@@ -46,7 +47,10 @@ pub async fn run(
     Ok(execution_result)
 }
 
-async fn run_internal(state: Arc<AppState>, data: SubmitData) -> anyhow::Result<Json<ExecutionResult>> {
+async fn run_internal(
+    state: Arc<AppState>,
+    data: SubmitData,
+) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = Local::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
