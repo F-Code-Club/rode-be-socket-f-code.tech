@@ -28,6 +28,8 @@ pub fn build(state: Arc<AppState>) -> Router {
             get(controller::auth::session_socket),
         )
         .route("/room/join", post(controller::room::join))
+        .route("/team/get-id", get(controller::team::get_id))
+        .route("/editor/socket/:question_id/:team_id", get(controller::editor_socket))
         .route("/scoring/run", post(controller::scoring::run))
         .route("/scoring/submit", post(controller::scoring::submit))
         .route(
