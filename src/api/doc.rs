@@ -32,6 +32,8 @@ impl Modify for SecurityAddon {
         controller::scoring::submit,
         controller::scoring::render_diff_image,
         controller::room::join,
+        controller::team::get_id,
+        controller::editor_socket,
         controller::auth::login,
         controller::auth::refresh,
         controller::auth::session_socket

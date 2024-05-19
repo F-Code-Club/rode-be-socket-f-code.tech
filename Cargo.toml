@@ -11,6 +11,7 @@ chromiumoxide = { version = "0.5.7", features = ["tokio-runtime"], default-featu
 chrono = { version = "0.4.38", features = ["serde"] }
 dirs = "5.0.1"
 futures = "0.3.30"
+futures-util = "0.3.30"
 google-drive3 = "5.0.4"
 image = "0.25.1"
 jsonwebtoken = "9.3.0"
@@ -31,6 +32,8 @@ utoipa = { version = "4.2.0", features = ["axum_extras", "uuid"] }
 utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 webbrowser = "1.0.1"
+yrs = "0.18.8"
+yrs-warp = "0.8.0"
 
 [dev-dependencies]
 http-body-util = "0.1.1"
