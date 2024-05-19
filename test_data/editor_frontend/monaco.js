@@ -3,6 +3,9 @@ import { WebsocketProvider } from 'y-websocket'
 import { MonacoBinding } from 'y-monaco'
 import * as monaco from 'monaco-editor'
 
+// root domain of the api
+const DOMAIN = "localhost:3000";
+
 window.addEventListener('load', () => {
     const ydoc = new Y.Doc()
 
@@ -10,8 +13,9 @@ window.addEventListener('load', () => {
     const ids = [1, 2];
     const question_id = ids[Math.floor(Math.random() * ids.length)].toString();
     const team_id = ids[Math.floor(Math.random() * ids.length)].toString();
+
     const provider = new WebsocketProvider(
-        'ws://localhost:3000/editor/socket',
+        `ws://${DOMAIN}/editor/socket`,
         `${question_id}/${team_id}`,
         ydoc
     )
