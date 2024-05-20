@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use axum::extract::State;
 use axum::Json;
 use chrono::Local;
@@ -57,7 +56,7 @@ async fn submit_internal(
     let now = Local::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
-    let team_id = member.team_id.context("Only team member can submit")?;
+    let team_id = member.team_id;
 
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;

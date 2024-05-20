@@ -48,7 +48,7 @@ CREATE TABLE public.accounts (
 CREATE TABLE public.members (
     id integer NOT NULL,
     has_join_room boolean DEFAULT false NOT NULL,
-    team_id integer,
+    team_id integer NOT NULL,
     account_id uuid NOT NULL
 );
 
