@@ -26,6 +26,7 @@ impl IntoResponse for ErrorResponse {
 
 #[derive(Debug, thiserror::Error, ToSchema)]
 pub enum Error {
+    TimedOut { reason: String },
     Unauthorized { message: String },
     Other(anyhow::Error),
 }
@@ -39,16 +40,9 @@ impl Display for Error {
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, message, details) = match self {
-            Error::Unauthorized { message } => (
-                StatusCode::UNAUTHORIZED,
-                message,
-                HashMap::<String, String>::new(),
-            ),
-            Error::Other(error) => (
-                StatusCode::BAD_REQUEST,
-                error.to_string(),
-                HashMap::<String, String>::new(),
-            ),
+            Error::TimedOut { reason } => (StatusCode::REQUEST_TIMEOUT, reason, HashMap::new()),
+            Error::Unauthorized { message } => (StatusCode::UNAUTHORIZED, message, HashMap::new()),
+            Error::Other(error) => (StatusCode::BAD_REQUEST, error.to_string(), HashMap::new()),
         };
 
         let response = ErrorResponse {
