@@ -31,7 +31,7 @@ pub static LOCAL_CORS_DOMAIN: Lazy<String> =
     Lazy::new(|| env_or_default("LOCAL_CORS_DOMAIN", "http://localhost:3000".to_string()));
 
 /// Time out
-pub static SUBMIT_TIME_OUT: Lazy<u64> = Lazy::new(|| env_or_default("API_TIME_OUT", 5));
+pub static SUBMIT_TIME_OUT: Lazy<u64> = Lazy::new(|| env_or_default("SUBMIT_TIME_OUT", 5));
 
 /// jwt expired in 1 day
 pub static JWT_EXPIRED_IN: Lazy<u64> = Lazy::new(|| env_or_default("JWT_EXPIRED_IN", 24 * 60 * 60));
