@@ -22,7 +22,7 @@ pub fn build(state: Arc<AppState>) -> Router {
 
     let middleware = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(handle_timeout_error))
-        .timeout(Duration::from_secs(5));
+        .timeout(Duration::from_secs(*config::SUBMIT_TIME_OUT));
 
     // register routes
     let router = Router::new()
