@@ -28,7 +28,11 @@ use super::SubmitData;
             body = ErrorResponse,
             example = json!({"status": 401, "message": "Invalid token", "details": {}})
         ),
-        (status = StatusCode::REQUEST_TIMEOUT, description = "Your request timed out!", body = String, content_type = "application/json" ,example = json!("Your request timed out!")), 
+        (
+            status = StatusCode::REQUEST_TIMEOUT,
+            body = ErrorResponse,
+            example = json!({"status": 408, "message": "Request timed out", "details": {}})
+        ),
     ),
     security(("jwt_token" = []))
 )]
