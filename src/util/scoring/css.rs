@@ -14,7 +14,7 @@ use std::io::Cursor;
 
 use super::ExecutionResult;
 use crate::database::model::Template;
-use crate::util::drive;
+use crate::util::drive::HubDrive;
 
 #[allow(dead_code)]
 async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec<u8>> {
@@ -94,22 +94,19 @@ pub async fn render_diff_image(
 
 #[allow(unused_variables)]
 pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
-    
     // Not existed in local
     if metadata(&template.local_path).is_err() {
-        let hub = drive::HubDrive::new().await?;
-        hub.download_file_by_id(&template.local_path, &template.local_path).await?;
+        let hub = HubDrive::new().await?;
+        hub.download_file_by_id(&template.url, &template.local_path).await?;
     }
     let mut template_buffer = Vec::new();
     let template: DynamicImage = ImageReader::open(&template.local_path)?.decode()?;
     template.write_to(&mut Cursor::new(&mut template_buffer), image::ImageFormat::Png)?;
 
-    let percent = match render_diff_image(
+    let (percent, _) = render_diff_image(
         &template_buffer, 
         code.to_owned())
-        .await? {
-            (match_percent, _) => match_percent,
-        };
+        .await?;
     Ok(ExecutionResult {
         score: percent as u32,
         run_time: 0,

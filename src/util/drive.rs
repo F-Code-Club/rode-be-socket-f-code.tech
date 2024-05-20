@@ -5,9 +5,9 @@ use google_drive3::oauth2::ApplicationSecret;
 use google_drive3::{DriveHub, oauth2, hyper, hyper_rustls};
 
 use google_drive3::oauth2::authenticator_delegate::{DefaultInstalledFlowDelegate, InstalledFlowDelegate};
-use std::fs::File;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 use std::future::Future;
-use std::io::Write;
 use std::pin::Pin;
 use hyper::body::to_bytes;
 
@@ -15,7 +15,7 @@ use crate::config ;
 
 async fn browser_user_url(url: &str, need_code: bool) -> Result<String, String> {
     if webbrowser::open(url).is_ok() {
-        println!("webbrowser was successfully opened.");
+        tracing::info!("webbrowser was successfully opened.");
     }
     let def_delegate = DefaultInstalledFlowDelegate;
     def_delegate.present_user_url(url, need_code).await
@@ -35,6 +35,7 @@ impl InstalledFlowDelegate for InstalledFlowBrowserDelegate {
     }
 }
 
+// Extract {file-id} after /d/ in "https://drive.google.com/file/d/{file-id}/" to download the specific file.
 fn extract_file_id(url: &str) -> Option<&str> {
     let parts: Vec<&str> = url.split('/').collect();
     if let Some(pos) = parts.iter().position(|&s| s == "d") {
@@ -64,32 +65,33 @@ impl HubDrive{
         )
         .flow_delegate(Box::new(InstalledFlowBrowserDelegate))
         .build()
-        .await
-        .expect("InstalledFlowAuthenticator failed to build");
+        .await?;
     
-        let instance = DriveHub::new(hyper::Client::builder().build(hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().https_or_http().enable_http1().build()), auth);
+        let instance = DriveHub::new(
+            hyper::Client::builder().build(
+                hyper_rustls::HttpsConnectorBuilder::new()
+                    .with_native_roots()
+                    .https_or_http()
+                    .enable_http1()
+                    .build(),
+            ),
+            auth,
+        );
         Ok(Self { instance })
     }
 
     pub async fn download_file_by_id(&self, url_path: &str, local_path: &str) -> anyhow::Result<()>{
         let file_id = extract_file_id(url_path).unwrap();
-        let result = self.instance
+        let (resposne, _) = self.instance
         .files()
         .get(file_id)
         .param("alt","media")
         .add_scope(google_drive3::api::Scope::Full)
         .doit().await?;
 
-        match result {
-            (res,_) => {
-                match to_bytes(res.into_body()).await? {
-                    body_bytes => {
-                        let mut file = File::create(local_path).expect("Failed to create file");
-                        file.write_all(&body_bytes).expect("Failed to write to file");
-                        Ok(())
-                    }
-                }
-            }
-        }
+        let mut file = File::create(local_path).await?;
+        // Turn response body to byte and then write to file
+        file.write_all(&to_bytes(resposne.into_body()).await?).await?;
+        Ok(())
     }
 }
