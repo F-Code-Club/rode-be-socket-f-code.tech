@@ -13,28 +13,6 @@ use hyper::body::to_bytes;
 
 use crate::config ;
 
-async fn browser_user_url(url: &str, need_code: bool) -> Result<String, String> {
-    if webbrowser::open(url).is_ok() {
-        tracing::info!("webbrowser was successfully opened.");
-    }
-    let def_delegate = DefaultInstalledFlowDelegate;
-    def_delegate.present_user_url(url, need_code).await
-}
-
-#[derive(Copy, Clone)]
-struct InstalledFlowBrowserDelegate;
-impl InstalledFlowDelegate for InstalledFlowBrowserDelegate {
-    /// the actual presenting of URL and browser opening happens in the function defined above here
-    /// we only pin it
-    fn present_user_url<'a>(
-        &'a self,
-        url: &'a str,
-        need_code: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<String, String>> + Send + 'a>> {
-        Box::pin(browser_user_url(url, need_code))
-    }
-}
-
 // Extract {file-id} after /d/ in "https://drive.google.com/file/d/{file-id}/" to download the specific file.
 fn extract_file_id(url: &str) -> Option<&str> {
     let parts: Vec<&str> = url.split('/').collect();
@@ -63,7 +41,6 @@ impl HubDrive{
             secret,
             oauth2::InstalledFlowReturnMethod::HTTPPortRedirect(*config::SERVER_PORT),
         )
-        .flow_delegate(Box::new(InstalledFlowBrowserDelegate))
         .build()
         .await?;
     
