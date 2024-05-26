@@ -41,14 +41,8 @@ pub static JWT_REFRESH_EXPIRED_IN: Lazy<u64> =
     Lazy::new(|| env_or_default("JWT_REFRESH_EXPIRED_IN", 7 * 24 * 60 * 60));
 
 /// Represent the number of test cases to run when the /scoring/run is called
-pub static PUBLIC_TEST_CASE_COUNT: Lazy<usize> =
-    Lazy::new(|| env_or_default("PUBLIC_TEST_CASE_COUNT", 2));
+pub static PUBLIC_TEST_CASE_COUNT: Lazy<usize> = Lazy::new(|| env_or_default("PUBLIC_TEST_CASE_COUNT", 2));
 
-pub static GOOGLE_CLIENT_ID: Lazy<String> =
-    Lazy::new(|| env_or_default("GOOGLE_CLIENT_ID", "".to_string()));
-pub static GOOGLE_CLIENT_SECRET: Lazy<String> =
-    Lazy::new(|| env_or_default("GOOGLE_CLIENT_SECRET", "".to_string()));
-pub static GOOGLE_REDIRECT_URL: Lazy<String> =
-    Lazy::new(|| env_or_default("GOOGLE_REDIRECT_URL", "".to_string()));
-pub static GOOGLE_REFRESH_TOKEN: Lazy<String> =
-    Lazy::new(|| env_or_default("GOOGLE_REFRESH_TOKEN", "".to_string()));
+pub static GOOGLE_CLIENT_EMAIL: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_CLIENT_EMAIL", "".to_string()));
+pub static GOOGLE_PRIVATE_KEY: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY", "".to_string()));
+pub static GOOGLE_PRIVATE_KEY_ID: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY_ID", "".to_string()));
