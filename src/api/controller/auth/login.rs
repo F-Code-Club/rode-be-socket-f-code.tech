@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::Json;
-use axum::{extract::State, Form};
+use axum::extract::State;
 use serde::Deserialize;
 use utoipa::ToSchema;
 
@@ -28,7 +28,7 @@ pub struct LoginData {
 )]
 pub async fn login(
     State(state): State<Arc<AppState>>,
-    Form(login_data): Form<LoginData>,
+    Json(login_data): Json<LoginData>,
 ) -> Result<Json<TokenPair>> {
     let token_pair = login_internal(state, login_data).await?;
 
