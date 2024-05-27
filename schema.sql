@@ -34,7 +34,7 @@ CREATE TABLE public.accounts (
     student_id character varying(24) NOT NULL,
     full_name character varying(48) NOT NULL,
     email character varying(30) NOT NULL,
-    password character varying(128) NOT NULL,
+    password character varying(128),
     phone character varying(12) NOT NULL,
     dob date NOT NULL,
     role public.role_enum DEFAULT 'user'::public.role_enum NOT NULL,
