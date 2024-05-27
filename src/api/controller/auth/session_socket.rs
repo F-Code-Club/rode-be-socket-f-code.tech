@@ -15,6 +15,17 @@ lazy_static! {
     static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
 }
 
+#[utoipa::path (
+    get,
+    tag = "Auth",
+    path = "/auth/session/socket",
+    responses (
+        (status = 101, description = "Connect to websocket successfully!"),
+        (status = 1006, description = "Connection is closed!"),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!")
+    )
+)]
+/// A web socket endpoint to ensure that each account can only have one active device
 pub async fn session_socket(
     State(state): State<Arc<AppState>>,
     ws: WebSocketUpgrade,

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Context;
 use axum::extract::State;
 use axum::Json;
 use chrono::Local;
@@ -14,22 +13,34 @@ use crate::enums::{ProgrammingLanguage, RoomKind};
 use crate::util::{self, scoring::ExecutionResult};
 use crate::{Error, Result};
 
-use super::Data;
+use super::SubmitData;
 
 #[utoipa::path (
     post,
     tag = "Scoring",
     path = "/scoring/submit",
     responses (
-        (status = 200, description = "Submit successfully!",body = ExecutionResult),
-        (status = 400, description = "Bad request!"),
-        (status = 401, description = "User's token is not authorized or missed!")
-    )
+        (status = Status::OK, description = "Score of the code", body = ExecutionResult),
+        (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
+        (
+            status = StatusCode::UNAUTHORIZED,
+            description = "User's token is not authorized or missed!",
+            body = ErrorResponse,
+            example = json!({"status": 401, "message": "Invalid token", "details": {}})
+        ),
+        (
+            status = StatusCode::REQUEST_TIMEOUT,
+            body = ErrorResponse,
+            example = json!({"status": 408, "message": "Request timed out", "details": {}})
+        ),
+    ),
+    security(("jwt_token" = []))
 )]
+/// Submit the code and get the score
 pub async fn submit(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
-    Json(data): Json<Data>,
+    Json(data): Json<SubmitData>,
 ) -> Result<Json<ExecutionResult>> {
     let member = Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
@@ -44,13 +55,13 @@ pub async fn submit(
 async fn submit_internal(
     state: Arc<AppState>,
     member: Member,
-    data: Data,
+    data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = Local::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
-    let team_id = member.team_id.context("Only team member can submit")?;
+    let team_id = member.team_id;
 
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;

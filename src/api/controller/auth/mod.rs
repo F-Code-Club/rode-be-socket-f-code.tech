@@ -9,6 +9,7 @@ pub use session_socket::*;
 use chrono::Local;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::Serialize;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
@@ -20,7 +21,7 @@ lazy_static! {
     static ref ENCODING_KEY: EncodingKey = EncodingKey::from_secret(config::JWT_SECRET.as_bytes());
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct TokenPair {
     token: String,
     refresh_token: String,
