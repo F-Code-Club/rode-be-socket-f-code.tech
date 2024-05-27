@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, sqlx::Type)]
 #[sqlx(type_name = "type_enum")]
 pub enum RoomKind {
     #[sqlx(rename = "BE")]
