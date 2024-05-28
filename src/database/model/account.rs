@@ -1,11 +1,13 @@
 use chrono::NaiveDate;
+use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
+use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 use crate::enums::AccountRole;
 
-#[derive(Debug, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct Account {
     pub id: Uuid,
     pub full_name: String,
@@ -24,13 +26,26 @@ pub struct Account {
 }
 
 impl Account {
-    pub async fn get_one_by_id(id: Uuid, database: &PgPool) -> anyhow::Result<Account> {
-        let account =
-            sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE id = $1", id)
-                .fetch_one(database)
-                .await?;
+    async fn get_one_by_id_id_internal(id: Uuid, database: &PgPool) -> sqlx::Result<Account> {
+        sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE id = $1", id)
+            .fetch_one(database)
+            .await
+    }
 
-        Ok(account)
+    pub async fn get_one_by_id(id: Uuid, database: &PgPool) -> anyhow::Result<Account> {
+        // TODO: find best cache size
+        const CACHE_SIZE: u64 = 50;
+        static CACHE: OnceCell<Cache<Uuid, Account>> = OnceCell::const_new();
+
+        let cache = CACHE.get_or_init(|| async { Cache::new(CACHE_SIZE) }).await;
+
+        match cache
+            .try_get_with(id, Account::get_one_by_id_id_internal(id, database))
+            .await
+        {
+            Ok(account) => Ok(account),
+            Err(error) => anyhow::bail!(error.to_string()),
+        }
     }
 
     pub async fn get_one_by_email(email: &str, database: &PgPool) -> anyhow::Result<Account> {
