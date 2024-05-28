@@ -4,6 +4,7 @@ use axum::extract::State;
 use axum::Json;
 use serde::Deserialize;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::app_state::AppState;
 use crate::database::model::Account;
@@ -12,8 +13,9 @@ use crate::Result;
 
 use super::TokenPair;
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct LoginData {
+    #[validate(email)]
     email: String,
     password: String,
 }
@@ -33,6 +35,8 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(login_data): Json<LoginData>,
 ) -> Result<Json<TokenPair>> {
+    login_data.validate().map_err(anyhow::Error::from)?;
+
     let account = Account::get_one_by_email(&login_data.email, &state.database).await?;
     if !account.is_enabled || account.is_locked {
         return Err(Error::Forbidden {
