@@ -28,6 +28,7 @@ impl IntoResponse for ErrorResponse {
 pub enum Error {
     TimedOut { reason: String },
     Unauthorized { message: String },
+    Forbidden { message: String },
     Other(anyhow::Error),
 }
 
@@ -42,6 +43,7 @@ impl IntoResponse for Error {
         let (status, message, details) = match self {
             Error::TimedOut { reason } => (StatusCode::REQUEST_TIMEOUT, reason, HashMap::new()),
             Error::Unauthorized { message } => (StatusCode::UNAUTHORIZED, message, HashMap::new()),
+            Error::Forbidden { message } => (StatusCode::FORBIDDEN, message, HashMap::new()),
             Error::Other(error) => (StatusCode::BAD_REQUEST, error.to_string(), HashMap::new()),
         };
 

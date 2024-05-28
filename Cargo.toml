@@ -34,6 +34,7 @@ utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 yrs = "0.18.8"
 yrs-warp = "0.8.0"
+bcrypt = "0.15.1"
 
 [dev-dependencies]
 http-body-util = "0.1.1"
