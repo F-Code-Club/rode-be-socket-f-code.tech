@@ -1,17 +1,21 @@
 use std::sync::Arc;
 
-use axum::Json;
 use axum::extract::State;
+use axum::Json;
 use serde::Deserialize;
 use utoipa::ToSchema;
+use validator::Validate;
 
 use crate::app_state::AppState;
+use crate::database::model::Account;
+use crate::Error;
 use crate::Result;
 
 use super::TokenPair;
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Deserialize, ToSchema, Validate)]
 pub struct LoginData {
+    #[validate(email)]
     email: String,
     password: String,
 }
@@ -23,6 +27,7 @@ pub struct LoginData {
     request_body = LoginData,
     responses (
         (status = StatusCode::OK, description = "Login successfully!", body = TokenPair),
+        (status = StatusCode::FORBIDDEN, description = "Trying to login into an account that cannot be used", body = ErrorResponse),
         (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
     )
 )]
@@ -30,24 +35,22 @@ pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(login_data): Json<LoginData>,
 ) -> Result<Json<TokenPair>> {
-    let token_pair = login_internal(state, login_data).await?;
+    login_data.validate().map_err(anyhow::Error::from)?;
 
-    Ok(token_pair)
-}
+    let account = Account::get_one_by_email(&login_data.email, &state.database).await?;
+    if !account.is_enabled || account.is_locked {
+        return Err(Error::Forbidden {
+            message: format!("Account with email {} cannot be used now", login_data.email),
+        });
+    }
 
-pub async fn login_internal(
-    state: Arc<AppState>,
-    login_data: LoginData,
-) -> anyhow::Result<Json<TokenPair>> {
-    let id = sqlx::query_scalar!(
-        "SELECT id FROM accounts WHERE email = $1 AND password = $2",
-        &login_data.email,
-        &login_data.password
-    )
-    .fetch_one(&state.database)
-    .await?;
+    let is_password_valid = bcrypt::verify(login_data.password, &account.password.unwrap())
+        .map_err(|error| anyhow::Error::from(error))?;
+    if !is_password_valid {
+        return Err(Error::Other(anyhow::anyhow!("Invalid password")));
+    }
 
-    let token_pair = TokenPair::new(id)?;
+    let token_pair = TokenPair::new(account.id)?;
 
     Ok(Json(token_pair))
 }

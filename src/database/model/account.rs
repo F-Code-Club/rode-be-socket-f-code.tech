@@ -13,7 +13,8 @@ pub struct Account {
     pub full_name: String,
     pub student_id: String,
     pub email: String,
-    pub password: String,
+    /// password is not None when is_enabled == true
+    pub password: Option<String>,
     pub phone: String,
     pub dob: NaiveDate,
     pub role: AccountRole,
@@ -45,5 +46,14 @@ impl Account {
             Ok(account) => Ok(account),
             Err(error) => anyhow::bail!(error.to_string()),
         }
+    }
+
+    pub async fn get_one_by_email(email: &str, database: &PgPool) -> anyhow::Result<Account> {
+        let account =
+            sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE email = $1", email)
+                .fetch_one(database)
+                .await?;
+
+        Ok(account)
     }
 }
