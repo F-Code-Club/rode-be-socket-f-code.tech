@@ -38,20 +38,25 @@ jobs:
     runs-on: fcode-japao-runner
     needs: socket-build
     env:
+      # Basic Config Socket
       DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@anataarisa.hopto.org/rode-be-test
-      JWT_SECRET: ${{secrets.JWT_SECRET}}
-      JWT_REFRESH_SECRET: ${{secrets.JWT_SECRET}}
       PORT: ${{secrets.PORT}}
-      PUBLIC_TEST_CASE_COUNT: ${{secrets.PUBLIC_TEST_CASE_COUNT}}
       LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
       PUBLIC_CORS_DOMAIN: ${{secrets.PUBLIC_CORS_DOMAIN}}
-      GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
-      GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
-      GOOGLE_REDIRECT_URL: ${{secrets.GOOGLE_REDIRECT_URL}}
-      GOOGLE_REFRESH_TOKEN: ${{secrets.GOOGLE_REFRESH_TOKEN}}
-      DOCKER_HUB_URL: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}
-      JWT_REFRESH_EXPIRED_IN: ${{secrets.JWT_REFRESH_EXPIRED_IN}}
+      # Config JWT Access And Secret
+      JWT_SECRET: ${{secrets.JWT_SECRET}}
       JWT_EXPIRED_IN: ${{secrets.JWT_EXPIRED_IN}}
+      JWT_REFRESH_SECRET: ${{secrets.JWT_SECRET}}
+      JWT_REFRESH_EXPIRED_IN: ${{secrets.JWT_REFRESH_EXPIRED_IN}}
+      # Config Test
+      SUBMIT_TIME_OUT: ${{secrets.SUBMIT_TIME_OUT}}
+      PUBLIC_TEST_CASE_COUNT: ${{secrets.PUBLIC_TEST_CASE_COUNT}}
+      # Config Google APIS
+      GOOGLE_CLIENT_EMAIL: ${{secrets.F_CODE_GOOGLE_CLIENT_EMAIL}}
+      GOOGLE_PRIVATE_KEY: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY}}
+      GOOGLE_PRIVATE_KEY_ID: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY_ID}}
+      # Config Docker
+      DOCKER_HUB_URL: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}
     steps:
     - name: Checkout Develop
       uses: actions/checkout@v3
