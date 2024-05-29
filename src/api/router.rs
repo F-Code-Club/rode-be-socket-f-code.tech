@@ -1,6 +1,10 @@
+use axum::http::header::{
+    ACCEPT, ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS,
+    ACCESS_CONTROL_ALLOW_ORIGIN, AUTHORIZATION, CONTENT_TYPE, ORIGIN,
+};
+use axum::http::{HeaderName, HeaderValue, Method};
 use axum::{
     error_handling::HandleErrorLayer,
-    http::{HeaderValue, Method},
     routing::{get, post},
     Router,
 };
@@ -14,8 +18,19 @@ use super::controller;
 use super::doc::ApiDoc;
 use crate::{app_state::AppState, config, util::timeout_handler::handle_timeout_error};
 
+const ALLOW_HEADERS: [HeaderName; 7] = [
+    ORIGIN,
+    AUTHORIZATION,
+    ACCESS_CONTROL_ALLOW_ORIGIN,
+    CONTENT_TYPE,
+    ACCEPT,
+    ACCESS_CONTROL_ALLOW_METHODS,
+    ACCESS_CONTROL_ALLOW_HEADERS,
+];
+const ALLOW_METHODS: [Method; 2] = [Method::GET, Method::POST];
+
 pub fn build(state: Arc<AppState>) -> Router {
-    let allow_origins = vec![
+    let allow_origins = [
         config::PUBLIC_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
         config::LOCAL_CORS_DOMAIN.parse::<HeaderValue>().unwrap(),
     ];
@@ -54,7 +69,10 @@ pub fn build(state: Arc<AppState>) -> Router {
         .layer(
             CorsLayer::new()
                 .allow_origin(allow_origins)
-                .allow_methods([Method::GET, Method::POST]),
+                .allow_headers(ALLOW_HEADERS)
+                .expose_headers(ALLOW_HEADERS)
+                .allow_credentials(true)
+                .allow_methods(ALLOW_METHODS),
         );
 
     let router = router
