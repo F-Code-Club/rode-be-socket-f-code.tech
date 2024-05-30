@@ -56,9 +56,8 @@ async fn join_internal(
 ) -> anyhow::Result<()> {
     let room = sqlx::query_as_unchecked!(
         Room,
-        "SELECT * FROM rooms WHERE id = $1 AND code = $2",
+        "SELECT * FROM rooms WHERE id = $1",
         join_room_info.room_id,
-        join_room_info.room_code
     )
     .fetch_one(&state.database)
     .await?;
@@ -66,7 +65,7 @@ async fn join_internal(
     if room.is_privated {
         let room_code = join_room_info.room_code;
 
-        anyhow::ensure!(room.code != room_code, "Room code is incorrect!");
+        anyhow::ensure!(room.code == room_code, "Room code is incorrect!");
 
         let now = Local::now().naive_local();
         anyhow::ensure!(now >= room.open_time, "Room has not been opened yet!");
