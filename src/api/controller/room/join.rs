@@ -68,7 +68,9 @@ async fn join_internal(
     .fetch_one(&state.database)
     .await?;
 
-    anyhow::ensure!(!room.is_privated, "The room is privated!");
+    if room.is_privated {
+        anyhow::bail!("The room is privated!");
+    }
 
     let now = Local::now().naive_local();
     anyhow::ensure!(now >= room.open_time, "Room has not been opened yet!");
