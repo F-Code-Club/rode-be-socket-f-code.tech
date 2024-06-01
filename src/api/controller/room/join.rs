@@ -54,12 +54,11 @@ async fn join_internal(
     member: Member,
     join_room_info: JoinRoomInfo,
 ) -> anyhow::Result<()> {
-    let room = sqlx::query_as_unchecked!(
-        Room,
-        r#"SELECT rooms.*
+    let room = sqlx::query_unchecked!(
+        r#"SELECT rooms.id, rooms.code, rooms.open_time, rooms.close_time, rooms.is_privated
            FROM rooms
            INNER JOIN scores
-           ON rooms.id = scores.room_Id 
+           ON rooms.id = scores.room_id 
            AND scores.team_id = $1
            WHERE rooms.code = $2"#,
         member.team_id,
