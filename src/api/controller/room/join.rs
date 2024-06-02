@@ -8,13 +8,12 @@ use serde::Deserialize;
 use crate::{
     api::extractor::JWTClaims,
     app_state::AppState,
-    database::model::{Member, Room},
+    database::model::Member,
     Error, Result,
 };
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct JoinRoomInfo {
-    room_id: i32,
     room_code: String,
 }
 
@@ -54,28 +53,34 @@ async fn join_internal(
     member: Member,
     join_room_info: JoinRoomInfo,
 ) -> anyhow::Result<()> {
-    let room = sqlx::query_as_unchecked!(
-        Room,
-        "SELECT * FROM rooms WHERE id = $1 AND code = $2",
-        join_room_info.room_id,
-        join_room_info.room_code
+    let room = match sqlx::query_unchecked!(
+        r#"SELECT rooms.id, rooms.code, rooms.open_time, rooms.close_time, rooms.is_privated
+           FROM rooms
+           INNER JOIN scores
+           ON rooms.id = scores.room_id 
+           AND scores.team_id = $1
+           WHERE rooms.code = $2"#,
+        member.team_id,
+        join_room_info.room_code,
     )
-    .fetch_one(&state.database)
-    .await?;
+    .fetch_optional(&state.database)
+    .await?
+    {
+        Some(room) => room,
+        None => anyhow::bail!("Invalid room code"),
+    };
 
     if room.is_privated {
-        let room_code = join_room_info.room_code;
-
-        anyhow::ensure!(room.code != room_code, "Room code is incorrect!");
-
-        let now = Local::now().naive_local();
-        anyhow::ensure!(now >= room.open_time, "Room has not been opened yet!");
-        anyhow::ensure!(now < room.close_time, "Room has been closed!");
+        anyhow::bail!("The room is privated!");
     }
+
+    let now = Local::now().naive_local();
+    anyhow::ensure!(now >= room.open_time, "Room has not been opened yet!");
+    anyhow::ensure!(now < room.close_time, "Room has been closed!");
 
     sqlx::query!(
         r#"
-        UPDATE members
+           UPDATE members
            SET has_join_room = true
            WHERE members.id = $1
         "#,
