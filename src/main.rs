@@ -19,8 +19,6 @@ extern crate lazy_static;
 use app_state::AppState;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    api::start_api().await?;
-
-    Ok(())
+async fn main() {
+    let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
 }

@@ -20,6 +20,7 @@ pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
 });
 
 pub static SERVER_PORT: Lazy<u16> = Lazy::new(|| env_or_default("SERVER_PORT", 3000));
+pub static METRICS_PORT: Lazy<u16> = Lazy::new(|| env_or_default("METRICS_PORT", 3001));
 
 pub static JWT_SECRET: Lazy<String> =
     Lazy::new(|| env_or_default("JWT_SECRET", "example".to_string()));
