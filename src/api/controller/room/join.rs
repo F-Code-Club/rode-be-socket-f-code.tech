@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use axum::{debug_handler, extract::State, Json};
 use chrono::Local;
 use std::sync::Arc;
@@ -9,7 +8,7 @@ use serde::Deserialize;
 use crate::{
     api::extractor::JWTClaims,
     app_state::AppState,
-    database::model::{Member, Room},
+    database::model::Member,
     Error, Result,
 };
 
@@ -54,7 +53,7 @@ async fn join_internal(
     member: Member,
     join_room_info: JoinRoomInfo,
 ) -> anyhow::Result<()> {
-    let room = sqlx::query_unchecked!(
+    let room = match sqlx::query_unchecked!(
         r#"SELECT rooms.id, rooms.code, rooms.open_time, rooms.close_time, rooms.is_privated
            FROM rooms
            INNER JOIN scores
@@ -64,8 +63,12 @@ async fn join_internal(
         member.team_id,
         join_room_info.room_code,
     )
-    .fetch_one(&state.database)
-    .await?;
+    .fetch_optional(&state.database)
+    .await?
+    {
+        Some(room) => room,
+        None => anyhow::bail!("Invalid room code"),
+    };
 
     if room.is_privated {
         anyhow::bail!("The room is privated!");
