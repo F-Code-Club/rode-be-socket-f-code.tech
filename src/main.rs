@@ -16,22 +16,9 @@ pub use error::{Error, Result};
 #[macro_use]
 extern crate lazy_static;
 
-use std::{net::SocketAddr, sync::Arc};
-use tokio::net::TcpListener;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 use app_state::AppState;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-    let state = Arc::new(AppState::new().await?);
-    let app = api::router::build(state);
-    let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::SERVER_PORT)).await?;
-    println!("R.ODE Socket Is Started And Listening On Port: {}", *config::SERVER_PORT);
-    axum::serve(listener, app).await?;
-
-    Ok(())
+async fn main() {
+    let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
 }

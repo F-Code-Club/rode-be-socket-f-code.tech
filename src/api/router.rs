@@ -1,13 +1,17 @@
+use axum::extract::{MatchedPath, Request};
 use axum::http::header::{
     ACCEPT, ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS,
     ACCESS_CONTROL_ALLOW_ORIGIN, AUTHORIZATION, CONTENT_TYPE, ORIGIN,
 };
 use axum::http::{HeaderName, HeaderValue, Method};
+use axum::middleware::{self, Next};
+use axum::response::IntoResponse;
 use axum::{
     error_handling::HandleErrorLayer,
     routing::{get, post},
     Router,
 };
+use std::time::Instant;
 use std::{sync::Arc, time::Duration};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -28,6 +32,32 @@ const ALLOW_HEADERS: [HeaderName; 7] = [
     ACCESS_CONTROL_ALLOW_HEADERS,
 ];
 const ALLOW_METHODS: [Method; 2] = [Method::GET, Method::POST];
+
+async fn track_metrics(req: Request, next: Next) -> impl IntoResponse {
+    let start = Instant::now();
+    let path = if let Some(matched_path) = req.extensions().get::<MatchedPath>() {
+        matched_path.as_str().to_owned()
+    } else {
+        req.uri().path().to_owned()
+    };
+    let method = req.method().clone();
+
+    let response = next.run(req).await;
+
+    let latency = start.elapsed().as_secs_f64();
+    let status = response.status().as_u16().to_string();
+
+    let labels = [
+        ("method", method.to_string()),
+        ("path", path),
+        ("status", status),
+    ];
+
+    metrics::counter!("http_requests_total", &labels).increment(1);
+    metrics::histogram!("http_requests_duration_seconds", &labels).record(latency);
+
+    response
+}
 
 pub fn build(state: Arc<AppState>) -> Router {
     let allow_origins = [
@@ -65,7 +95,15 @@ pub fn build(state: Arc<AppState>) -> Router {
         .route(
             "/scoring/render-diff-image",
             post(controller::scoring::render_diff_image).layer(middleware.clone()),
-        )
+        );
+
+    // add openapi doc and swagger
+    let router = router
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
+
+    // register global middlewares
+    let router = router
+        .layer(TraceLayer::new_for_http())
         .layer(
             CorsLayer::new()
                 .allow_origin(allow_origins)
@@ -73,13 +111,9 @@ pub fn build(state: Arc<AppState>) -> Router {
                 .expose_headers(ALLOW_HEADERS)
                 .allow_credentials(true)
                 .allow_methods(ALLOW_METHODS),
-        );
+        )
+        .route_layer(middleware::from_fn(track_metrics));
 
-    let router = router
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()));
-
-    // register global middlewares
-    let router = router.layer(TraceLayer::new_for_http());
-
+    // init state
     router.with_state(state)
 }

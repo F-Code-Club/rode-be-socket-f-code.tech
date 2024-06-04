@@ -37,6 +37,8 @@ yrs-warp = "0.8.0"
 bcrypt = "0.15.1"
 moka = { version = "0.12.7", features = ["future"] }
 validator = { version = "0.18.1", features = ["derive"] }
+metrics-exporter-prometheus = { version = "0.15.0", default-features = false }
+metrics = { version = "0.23.0", default-features = false }
 
 [dev-dependencies]
 http-body-util = "0.1.1"
