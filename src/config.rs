@@ -1,5 +1,7 @@
 use std::{env, str::FromStr};
 
+use chrono::{DateTime, NaiveDateTime, TimeZone};
+use chrono_tz::Tz;
 use once_cell::sync::Lazy;
 
 fn env_or_default<T: FromStr>(env_name: &'static str, default: T) -> T {
@@ -11,6 +13,8 @@ fn env_or_default<T: FromStr>(env_name: &'static str, default: T) -> T {
         },
     }
 }
+
+pub const TIME_ZONE: Tz = chrono_tz::Asia::Ho_Chi_Minh;
 
 pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
     env_or_default(
@@ -42,8 +46,12 @@ pub static JWT_REFRESH_EXPIRED_IN: Lazy<u64> =
     Lazy::new(|| env_or_default("JWT_REFRESH_EXPIRED_IN", 7 * 24 * 60 * 60));
 
 /// Represent the number of test cases to run when the /scoring/run is called
-pub static PUBLIC_TEST_CASE_COUNT: Lazy<usize> = Lazy::new(|| env_or_default("PUBLIC_TEST_CASE_COUNT", 2));
+pub static PUBLIC_TEST_CASE_COUNT: Lazy<usize> =
+    Lazy::new(|| env_or_default("PUBLIC_TEST_CASE_COUNT", 2));
 
-pub static GOOGLE_CLIENT_EMAIL: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_CLIENT_EMAIL", "".to_string()));
-pub static GOOGLE_PRIVATE_KEY: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY", "".to_string()));
-pub static GOOGLE_PRIVATE_KEY_ID: Lazy<String> = Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY_ID", "".to_string()));
+pub static GOOGLE_CLIENT_EMAIL: Lazy<String> =
+    Lazy::new(|| env_or_default("GOOGLE_CLIENT_EMAIL", "".to_string()));
+pub static GOOGLE_PRIVATE_KEY: Lazy<String> =
+    Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY", "".to_string()));
+pub static GOOGLE_PRIVATE_KEY_ID: Lazy<String> =
+    Lazy::new(|| env_or_default("GOOGLE_PRIVATE_KEY_ID", "".to_string()));
