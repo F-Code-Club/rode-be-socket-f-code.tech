@@ -2,8 +2,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use tokio::net::TcpListener;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::config;
 use crate::AppState;
@@ -15,9 +13,6 @@ mod metrics;
 mod router;
 
 pub async fn start_api() {
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .init();
     let state = Arc::new(AppState::new().await.unwrap());
     let app = router::build(state);
     let listener =
