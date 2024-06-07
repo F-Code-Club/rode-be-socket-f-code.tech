@@ -42,7 +42,6 @@ impl Modify for SecurityAddon {
     components(schemas(
         controller::scoring::SubmitData,
         controller::scoring::RenderDiffImageData,
-        controller::room::JoinRoomInfo,
         controller::auth::LoginData,
         controller::auth::TokenPair,
         enums::ProgrammingLanguage,
