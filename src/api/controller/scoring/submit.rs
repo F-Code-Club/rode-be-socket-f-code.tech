@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use chrono::Local;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -58,7 +57,7 @@ async fn submit_internal(
     data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
-    let now = Local::now().naive_local();
+    let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
     let team_id = member.team_id;
@@ -163,7 +162,7 @@ pub async fn save_submission(
     execution_result: &ExecutionResult,
     database: &PgPool,
 ) -> anyhow::Result<()> {
-    let now = Local::now().naive_local();
+    let now = util::time::now().naive_local();
 
     // create new new score if not exist otherwise update
     let score_id = match Score::get_optional_by_ids(room_id, team_id, database).await? {

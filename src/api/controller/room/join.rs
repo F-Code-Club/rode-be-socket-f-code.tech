@@ -1,23 +1,18 @@
-use axum::{debug_handler, extract::State, Json};
-use chrono::Local;
+use axum::{extract::State, Json};
+use serde::Deserialize;
 use std::sync::Arc;
 use utoipa::ToSchema;
 
-use serde::Deserialize;
-
-use crate::{
-    api::extractor::JWTClaims,
-    app_state::AppState,
-    database::model::Member,
-    Error, Result,
-};
+use crate::api::extractor::JWTClaims;
+use crate::database::model::Member;
+use crate::{util, AppState};
+use crate::{Error, Result};
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct JoinRoomInfo {
     room_code: String,
 }
 
-#[debug_handler]
 #[utoipa::path (
     post,
     tag = "Room",
@@ -74,7 +69,7 @@ async fn join_internal(
         anyhow::bail!("The room is privated!");
     }
 
-    let now = Local::now().naive_local();
+    let now = util::time::now().naive_local();
     anyhow::ensure!(now >= room.open_time, "Room has not been opened yet!");
     anyhow::ensure!(now < room.close_time, "Room has been closed!");
 
