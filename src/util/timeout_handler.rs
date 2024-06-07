@@ -7,6 +7,6 @@ use crate::Error;
 
 pub async fn handle_timeout_error(_method: Method, _uri: Uri, err: BoxError) -> Error {
     Error::TimedOut {
-        reason: err.to_string(),
+        message: err.to_string(),
     }
 }

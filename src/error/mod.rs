@@ -1,16 +1,22 @@
+mod timed_out;
+
+pub use timed_out::TimedOutError;
+
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use std::{collections::HashMap, fmt::Display};
 use utoipa::ToSchema;
 
-pub type Result<T> = core::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
+
+trait ErrorTrait: std::error::Error + Into<ErrorResponse> {}
 
 #[derive(ToSchema)]
 pub struct ErrorResponse {
     #[schema(value_type = u16)]
     status: StatusCode,
     message: String,
-    details: HashMap<String, String>,
+    details: Option<Vec<String>>
 }
 
 impl IntoResponse for ErrorResponse {
@@ -26,7 +32,7 @@ impl IntoResponse for ErrorResponse {
 
 #[derive(Debug, thiserror::Error, ToSchema)]
 pub enum Error {
-    TimedOut { reason: String },
+    TimedOut { message: String },
     Unauthorized { message: String },
     Forbidden { message: String },
     Other(anyhow::Error),
@@ -41,10 +47,10 @@ impl Display for Error {
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, message, details) = match self {
-            Error::TimedOut { reason } => (StatusCode::REQUEST_TIMEOUT, reason, HashMap::new()),
-            Error::Unauthorized { message } => (StatusCode::UNAUTHORIZED, message, HashMap::new()),
-            Error::Forbidden { message } => (StatusCode::FORBIDDEN, message, HashMap::new()),
-            Error::Other(error) => (StatusCode::BAD_REQUEST, error.to_string(), HashMap::new()),
+            Error::TimedOut { message: reason } => (StatusCode::REQUEST_TIMEOUT, reason, None),
+            Error::Unauthorized { message } => (StatusCode::UNAUTHORIZED, message, None),
+            Error::Forbidden { message } => (StatusCode::FORBIDDEN, message, None),
+            Error::Other(error) => (StatusCode::BAD_REQUEST, error.to_string(), None),
         };
 
         let response = ErrorResponse {
