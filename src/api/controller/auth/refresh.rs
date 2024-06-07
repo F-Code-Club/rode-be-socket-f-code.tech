@@ -24,7 +24,7 @@ lazy_static! {
     )
 )]
 /// Generate a new token pair with extended expired time using refresh token
-pub async fn refresh(Json(refresh_token): Json<String>) -> Result<Json<TokenPair>> {
+pub async fn refresh(refresh_token: String) -> Result<Json<TokenPair>> {
     let token_pair = refresh_internal(refresh_token).await?;
 
     Ok(token_pair)
