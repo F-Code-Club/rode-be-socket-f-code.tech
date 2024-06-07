@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use chrono::Local;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
@@ -57,7 +56,7 @@ async fn run_internal(
     data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
-    let now = Local::now().naive_local();
+    let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
     let (test_cases, template) = match room.r#type {
