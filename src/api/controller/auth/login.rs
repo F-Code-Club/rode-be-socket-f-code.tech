@@ -44,11 +44,28 @@ pub async fn login(
         });
     }
 
+    if account.is_logged_in {
+        return Err(Error::Forbidden {
+            message: "Cannot login. Account is logged in other device!".to_string(),
+        });
+    }
+
     let is_password_valid = bcrypt::verify(login_data.password, &account.password.unwrap())
         .map_err(|error| anyhow::Error::from(error))?;
     if !is_password_valid {
         return Err(Error::Other(anyhow::anyhow!("Invalid password")));
     }
+
+    sqlx::query!(
+        r#"
+            UPDATE accounts
+            SET is_logged_in = true
+            WHERE accounts.id = $1
+        "#,
+        account.id
+    )
+    .execute(&state.database)
+    .await;
 
     let token_pair = TokenPair::new(account.id)?;
 
