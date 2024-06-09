@@ -35,6 +35,7 @@ impl Modify for SecurityAddon {
         controller::team::get_id,
         controller::editor_socket,
         controller::auth::login,
+        controller::auth::logout,
         controller::auth::refresh,
         controller::auth::session_socket
     ),

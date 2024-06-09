@@ -73,6 +73,7 @@ pub fn build(state: Arc<AppState>) -> Router {
     let router = Router::new()
         .route("/", get(controller::ping))
         .route("/auth/login", post(controller::auth::login))
+        .route("/auth/logout", post(controller::auth::logout))
         .route("/auth/refresh", post(controller::auth::refresh))
         .route(
             "/auth/session/socket",
