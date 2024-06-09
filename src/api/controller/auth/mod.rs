@@ -1,8 +1,10 @@
 mod login;
+mod logout;
 mod refresh;
 mod session_socket;
 
 pub use login::*;
+pub use logout::*;
 pub use refresh::*;
 pub use session_socket::*;
 
