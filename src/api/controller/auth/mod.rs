@@ -1,10 +1,8 @@
 mod login;
 mod refresh;
-mod session_socket;
 
 pub use login::*;
 pub use refresh::*;
-pub use session_socket::*;
 
 use chrono::Local;
 use jsonwebtoken::{encode, EncodingKey, Header};

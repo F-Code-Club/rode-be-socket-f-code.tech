@@ -36,7 +36,6 @@ impl Modify for SecurityAddon {
         controller::editor_socket,
         controller::auth::login,
         controller::auth::refresh,
-        controller::auth::session_socket
     ),
     modifiers(&SecurityAddon),
     components(schemas(
