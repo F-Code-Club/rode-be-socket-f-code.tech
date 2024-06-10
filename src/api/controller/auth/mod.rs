@@ -21,18 +21,19 @@ lazy_static! {
 
 #[derive(Serialize, ToSchema)]
 pub struct TokenPair {
-    token: String,
-    refresh_token: String,
+    pub token: String,
+    pub refresh_token: String,
 }
 
 impl TokenPair {
-    fn new(id: Uuid) -> anyhow::Result<TokenPair> {
+    fn new(id: Uuid, device_fingerprint: String) -> anyhow::Result<TokenPair> {
         let now = Local::now().timestamp() as u64;
 
         let token = encode(
             &Header::default(),
             &JWTClaims {
                 sub: id,
+                device_fingerprint: device_fingerprint.clone(),
                 exp: now + *config::JWT_EXPIRED_IN,
             },
             &ENCODING_KEY,
@@ -41,6 +42,7 @@ impl TokenPair {
             &Header::default(),
             &JWTClaims {
                 sub: id,
+                device_fingerprint,
                 exp: now + *config::JWT_REFRESH_EXPIRED_IN,
             },
             &REFRESH_ENCODING_KEY,

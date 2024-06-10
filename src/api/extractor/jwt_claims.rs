@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -8,6 +10,7 @@ use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::app_state::AppState;
 use crate::config;
 use crate::Error;
 
@@ -19,14 +22,15 @@ lazy_static! {
 pub struct JWTClaims {
     /// id of account in database
     pub sub: Uuid,
+    pub device_fingerprint: String,
     pub exp: u64,
 }
 
 #[async_trait]
-impl<S: Send + Sync> FromRequestParts<S> for JWTClaims {
+impl FromRequestParts<Arc<AppState>> for JWTClaims {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await?;
