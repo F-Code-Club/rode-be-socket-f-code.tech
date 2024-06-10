@@ -11,15 +11,21 @@ use crate::database::model::Account;
 use crate::Error;
 use crate::Result;
 
-use super::TokenPair;
+use super::util::TokenPair;
 
 #[derive(Deserialize, ToSchema, Validate)]
 pub struct LoginData {
     #[validate(email)]
     email: String,
     password: String,
+    /// browser fingerprint
+    fingerprint: String,
 }
 
+/// Login route
+///
+/// # Mechanisms
+/// When a user logs in, revoke all existing tokens associated with their account
 #[utoipa::path (
     post,
     tag = "Auth",
@@ -38,19 +44,23 @@ pub async fn login(
     login_data.validate().map_err(anyhow::Error::from)?;
 
     let account = Account::get_one_by_email(&login_data.email, &state.database).await?;
-    if !account.is_enabled || account.is_locked {
+    if !account.is_usable() {
         return Err(Error::Forbidden {
             message: format!("Account with email {} cannot be used now", login_data.email),
         });
     }
 
     let is_password_valid = bcrypt::verify(login_data.password, &account.password.unwrap())
-        .map_err(|error| anyhow::Error::from(error))?;
+        .map_err(anyhow::Error::from)?;
     if !is_password_valid {
         return Err(Error::Other(anyhow::anyhow!("Invalid password")));
     }
 
-    let token_pair = TokenPair::new(account.id)?;
+    let token_pair = TokenPair::generate(
+        account.id,
+        login_data.fingerprint,
+        &state.account_fingerprints,
+    )?;
 
     Ok(Json(token_pair))
 }

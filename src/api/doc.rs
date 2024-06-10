@@ -42,6 +42,7 @@ impl Modify for SecurityAddon {
         controller::scoring::SubmitData,
         controller::scoring::RenderDiffImageData,
         controller::auth::LoginData,
+        controller::auth::RefreshData,
         controller::auth::TokenPair,
         enums::ProgrammingLanguage,
         util::scoring::ExecutionResult,

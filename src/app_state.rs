@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::sync::Mutex;
 
 use anyhow::Result;
+use dashmap::DashMap;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -10,7 +11,7 @@ use crate::config;
 #[derive(Debug)]
 pub struct AppState {
     pub database: PgPool,
-    pub logged_in_account_ids: Mutex<HashSet<Uuid>>,
+    pub account_fingerprints: DashMap<Uuid, String>
 }
 impl AppState {
     pub async fn new() -> Result<Self> {
@@ -18,7 +19,7 @@ impl AppState {
 
         Ok(Self {
             database: pool,
-            logged_in_account_ids: Mutex::new(HashSet::new()),
+            account_fingerprints: DashMap::new()
         })
     }
 }

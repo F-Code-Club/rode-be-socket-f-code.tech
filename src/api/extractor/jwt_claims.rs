@@ -22,7 +22,7 @@ lazy_static! {
 pub struct JWTClaims {
     /// id of account in database
     pub sub: Uuid,
-    pub device_fingerprint: String,
+    pub fingerprint: String,
     pub exp: u64,
 }
 
@@ -44,7 +44,7 @@ impl FromRequestParts<Arc<AppState>> for JWTClaims {
 
         let claims = token_data.claims.clone();
         let account_id = claims.sub;
-        let fingerprint = claims.device_fingerprint;
+        let fingerprint = claims.fingerprint;
 
         // Ensure that only the latest logged in device can process further
         let is_valid_fingerprint = match state.account_fingerprints.get(&account_id) {
