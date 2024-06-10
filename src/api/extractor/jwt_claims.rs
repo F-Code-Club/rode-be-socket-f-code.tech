@@ -18,7 +18,7 @@ lazy_static! {
     static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct JWTClaims {
     /// id of account in database
     pub sub: Uuid,
@@ -30,7 +30,10 @@ pub struct JWTClaims {
 impl FromRequestParts<Arc<AppState>> for JWTClaims {
     type Rejection = Error;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &Arc<AppState>,
+    ) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await?;
@@ -38,6 +41,21 @@ impl FromRequestParts<Arc<AppState>> for JWTClaims {
         let token = bearer.token();
 
         let token_data = decode::<JWTClaims>(token, &DECODING_KEY, &Validation::default())?;
+
+        let claims = token_data.claims.clone();
+        let account_id = claims.sub;
+        let fingerprint = claims.device_fingerprint;
+
+        // Ensure that only the latest logged in device can process further
+        let is_valid_fingerprint = match state.account_fingerprints.get(&account_id) {
+            None => true,
+            Some(valid_fingerprint) => fingerprint == *valid_fingerprint.value(),
+        };
+        if !is_valid_fingerprint {
+            return Err(Error::Unauthorized {
+                message: "Invalid token".to_string(),
+            });
+        }
 
         Ok(token_data.claims)
     }
