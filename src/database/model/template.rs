@@ -2,18 +2,34 @@ use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::OnceCell;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, ToSchema, sqlx::FromRow)]
 pub struct Template {
+    /// Id of the template
+    ///
+    /// # Notes
+    /// - Skipped during serializing since id is only relevant to server side
+    #[serde(skip)]
     pub id: Uuid,
+
+    /// Id of the question containing the template
+    ///
+    /// # Notes
+    /// - Skipped during serializing since question id is only relevant to server side
+    #[serde(skip)]
     pub question_id: Uuid,
+
+    /// Path of the template files, relative to the root folder specified in [url](Template::url)
     pub local_path: String,
+
+    /// Google drive link to the root folder
     pub url: String,
 }
 
 impl Template {
-    pub async fn get_one_by_question_id_internal(
+    async fn get_one_by_question_id_internal(
         question_id: Uuid,
         database: &PgPool,
     ) -> sqlx::Result<Template> {

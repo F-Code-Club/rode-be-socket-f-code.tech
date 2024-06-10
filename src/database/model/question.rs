@@ -2,19 +2,40 @@ use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::OnceCell;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize, ToSchema, sqlx::FromRow)]
 pub struct Question {
+    /// Id of the question
+    ///
+    /// # Notes
+    /// - Skipped during serializing since id is only relevant to server side
+    #[serde(skip)]
     pub id: Uuid,
+
+    /// Id of the stack containing the question
+    ///
+    /// # Notes
+    /// - Skipped during serializing since stack id is only relevant to server side
+    #[serde(skip)]
     pub stack_id: Uuid,
-    // Always >= 1
+
+    /// Max submit time of the question
+    ///
+    /// # Constraints
+    /// - max_submit_time >= 1
     pub max_submit_time: i32,
+
+    /// Score a team will get if finished the question
+    ///
+    /// # Constraints
+    /// - score >= 0
     pub score: i32,
 }
 
 impl Question {
-    pub async fn get_one_by_ids_internal(
+    async fn get_one_by_ids_internal(
         id: Uuid,
         stack_id: Uuid,
         database: &PgPool,
