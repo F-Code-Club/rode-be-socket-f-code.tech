@@ -84,6 +84,7 @@ pub fn build(state: Arc<AppState>) -> Router {
             "/editor/socket/:question_id/:team_id",
             get(controller::editor_socket),
         )
+        .route("/question/get", get(controller::question::get))
         .route(
             "/scoring/run",
             post(controller::scoring::run).layer(middleware.clone()),
