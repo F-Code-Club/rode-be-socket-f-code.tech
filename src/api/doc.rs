@@ -45,6 +45,7 @@ impl Modify for SecurityAddon {
         controller::auth::LoginData,
         controller::auth::RefreshData,
         controller::auth::TokenPair,
+        controller::question::Question,
         enums::ProgrammingLanguage,
         util::scoring::ExecutionResult,
         crate::error::ErrorResponse,
