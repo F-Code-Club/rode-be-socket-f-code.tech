@@ -28,14 +28,15 @@ impl Modify for SecurityAddon {
 #[openapi(
     paths(
         controller::ping,
-        controller::scoring::run,
-        controller::scoring::submit,
-        controller::scoring::render_diff_image,
+        controller::auth::login,
+        controller::auth::refresh,
         controller::room::join,
         controller::team::get_id,
         controller::editor_socket,
-        controller::auth::login,
-        controller::auth::refresh,
+        controller::question::get,
+        controller::scoring::run,
+        controller::scoring::submit,
+        controller::scoring::render_diff_image,
     ),
     modifiers(&SecurityAddon),
     components(schemas(
