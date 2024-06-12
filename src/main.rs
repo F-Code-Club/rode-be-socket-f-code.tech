@@ -2,6 +2,9 @@
 #![feature(const_int_from_str)]
 #![feature(iter_array_chunks)]
 #![feature(custom_test_frameworks)]
+#![feature(async_closure)]
+#![feature(never_type)]
+#![feature(duration_constructors)]
 
 pub mod api;
 pub mod app_state;
@@ -17,6 +20,7 @@ pub use error::{Error, Result};
 extern crate lazy_static;
 
 use app_state::AppState;
+use tokio::task::JoinSet;
 use tracing_subscriber::fmt::time::ChronoLocal;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -31,5 +35,10 @@ async fn main() {
         )
         .init();
 
-    let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
+    let mut set = JoinSet::new();
+    set.spawn(api::start_api());
+    set.spawn(api::start_metrics());
+    set.spawn(database::cron_job::start());
+
+    while !set.is_empty() {}
 }
