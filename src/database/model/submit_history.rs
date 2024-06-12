@@ -21,26 +21,57 @@ pub struct SubmitHistory {
 }
 
 impl SubmitHistory {
-    pub async fn insert(self, database: &PgPool) -> anyhow::Result<()> {
+    #[allow(clippy::too_many_arguments)]
+    pub async fn insert(
+        question_id: Uuid,
+        score_id: Uuid,
+        member_id: i32,
+        submit_number: i32,
+        run_time: i32,
+        score: i32,
+        language: ProgrammingLanguage,
+        character_count: i32,
+        last_submit_time: NaiveDateTime,
+        submissions: String,
+        database: &PgPool,
+    ) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
             INSERT INTO submit_histories (question_id, score_id, member_id, submit_number, run_time, score, language, character_count, last_submit_time, submissions)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             "#,
-            self.score_id,
-            self.question_id,
-            self.member_id,
-            self.submit_number,
-            self.run_time,
-            self.score,
-            self.language as _,
-            self.character_count,
-            self.last_submit_time,
-            self.submissions
+            question_id,
+            score_id,
+            member_id,
+            submit_number,
+            run_time,
+            score,
+            language as _,
+            character_count,
+            last_submit_time,
+            submissions
         )
         .execute(database)
         .await?;
 
         Ok(())
+    }
+
+    /// Count number of submit of a member for a question
+    pub async fn count(
+        question_id: Uuid,
+        member_id: i32,
+        database: &PgPool,
+    ) -> anyhow::Result<i64> {
+        let submit_count = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM submit_histories WHERE question_id = $1 AND member_id = $2",
+            question_id,
+            member_id
+        )
+        .fetch_one(database)
+        .await?
+        .unwrap_or(0);
+
+        Ok(submit_count)
     }
 }
