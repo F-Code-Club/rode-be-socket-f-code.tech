@@ -18,7 +18,10 @@ use crate::enums::ProgrammingLanguage;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
+    /// The score of the execution
+    /// score > 0 if passed all test cases and 0 otherwise
     pub score: u32,
+    /// Running time of the execution in millisecond
     pub run_time: u32,
 }
 
