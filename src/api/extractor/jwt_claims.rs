@@ -4,6 +4,7 @@ use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::RequestPartsExt;
+use axum_extra::headers::UserAgent;
 use axum_extra::headers::{authorization::Bearer, Authorization};
 use axum_extra::TypedHeader;
 use jsonwebtoken::{decode, DecodingKey, Validation};
@@ -44,7 +45,14 @@ impl FromRequestParts<Arc<AppState>> for JWTClaims {
 
         let claims = token_data.claims.clone();
         let account_id = claims.sub;
+
         let fingerprint = claims.fingerprint;
+        let TypedHeader(user_agent) = parts.extract::<TypedHeader<UserAgent>>().await?;
+        if fingerprint != user_agent.to_string() {
+            return Err(Error::Unauthorized {
+                message: "Invalid token".to_string(),
+            });
+        }
 
         // Ensure that only the latest logged in device can process further
         let is_valid_fingerprint = match state.account_fingerprints.get(&account_id) {
