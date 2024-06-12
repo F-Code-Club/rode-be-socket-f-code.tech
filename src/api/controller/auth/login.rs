@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
+use axum_extra::headers::UserAgent;
+use axum_extra::TypedHeader;
 use serde::Deserialize;
 use utoipa::ToSchema;
 use validator::Validate;
@@ -18,8 +20,6 @@ pub struct LoginData {
     #[validate(email)]
     email: String,
     password: String,
-    /// browser fingerprint
-    fingerprint: String,
 }
 
 /// Login route
@@ -39,6 +39,7 @@ pub struct LoginData {
 )]
 pub async fn login(
     State(state): State<Arc<AppState>>,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
     Json(login_data): Json<LoginData>,
 ) -> Result<Json<TokenPair>> {
     login_data.validate().map_err(anyhow::Error::from)?;
@@ -58,7 +59,7 @@ pub async fn login(
 
     let token_pair = TokenPair::generate(
         account.id,
-        login_data.fingerprint,
+        user_agent.to_string(),
         &state.account_fingerprints,
     )?;
 
