@@ -1,16 +1,11 @@
 use axum::Json;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Validation};
 
 use crate::api::extractor::JWTClaims;
 use crate::config;
 use crate::Result;
 
 use super::TokenPair;
-
-lazy_static! {
-    static ref REFRESH_DECODING_KEY: DecodingKey =
-        DecodingKey::from_secret(config::JWT_REFRESH_SECRET.as_bytes());
-}
 
 #[axum::debug_handler]
 #[utoipa::path (
@@ -33,7 +28,7 @@ pub async fn refresh(refresh_token: String) -> Result<Json<TokenPair>> {
 pub async fn refresh_internal(refresh_token: String) -> anyhow::Result<Json<TokenPair>> {
     let token_data = decode::<JWTClaims>(
         &refresh_token,
-        &REFRESH_DECODING_KEY,
+        &config::JWT_REFRESH_KEYPAIR.decoding,
         &Validation::default(),
     )?;
     let id = token_data.claims.sub;

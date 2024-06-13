@@ -5,15 +5,11 @@ use axum::extract::ws::Message;
 use axum::extract::{ws::WebSocket, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use futures::StreamExt;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Validation};
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::config;
-
-lazy_static! {
-    static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
-}
 
 #[utoipa::path (
     get,
@@ -44,7 +40,7 @@ async fn session_socket_internal(state: Arc<AppState>, stream: WebSocket) -> any
     let Message::Text(token) = message else {
         anyhow::bail!("Expect a token")
     };
-    let token_data = decode::<JWTClaims>(&token, &DECODING_KEY, &Validation::default())?;
+    let token_data = decode::<JWTClaims>(&token, &config::JWT_KEYPAIR.decoding, &Validation::default())?;
     let id = token_data.claims.sub;
 
     tracing::info!("New id joined: {}", id);

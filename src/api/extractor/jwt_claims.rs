@@ -4,16 +4,12 @@ use axum::http::request::Parts;
 use axum::RequestPartsExt;
 use axum_extra::headers::{authorization::Bearer, Authorization};
 use axum_extra::TypedHeader;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::config;
 use crate::Error;
-
-lazy_static! {
-    static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct JWTClaims {
@@ -33,7 +29,8 @@ impl<S: Send + Sync> FromRequestParts<S> for JWTClaims {
 
         let token = bearer.token();
 
-        let token_data = decode::<JWTClaims>(token, &DECODING_KEY, &Validation::default())?;
+        let token_data =
+            decode::<JWTClaims>(token, &config::JWT_KEYPAIR.decoding, &Validation::default())?;
 
         Ok(token_data.claims)
     }
