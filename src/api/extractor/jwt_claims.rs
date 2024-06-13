@@ -26,6 +26,7 @@ pub struct JWTClaims {
 impl<S: Send + Sync> FromRequestParts<S> for JWTClaims {
     type Rejection = Error;
 
+    #[tracing::instrument(error)]
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let TypedHeader(Authorization(bearer)) = parts
             .extract::<TypedHeader<Authorization<Bearer>>>()

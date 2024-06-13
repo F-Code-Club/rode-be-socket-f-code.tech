@@ -32,6 +32,7 @@ impl Account {
             .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_id(id: Uuid, database: &PgPool) -> anyhow::Result<Account> {
         // TODO: find best cache size
         const CACHE_SIZE: u64 = 50;
@@ -48,6 +49,7 @@ impl Account {
         }
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_email(email: &str, database: &PgPool) -> anyhow::Result<Account> {
         let account =
             sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE email = $1", email)

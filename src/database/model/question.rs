@@ -50,6 +50,7 @@ impl Question {
         .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_ids(
         id: Uuid,
         stack_id: Uuid,
