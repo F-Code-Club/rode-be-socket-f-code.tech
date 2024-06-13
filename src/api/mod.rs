@@ -15,8 +15,9 @@ mod router;
 pub async fn start_api() {
     let state = Arc::new(AppState::new().await.unwrap());
     let app = router::build(state);
-    let listener =
-        TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::SERVER_PORT)).await.unwrap();
+    let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::SERVER_PORT))
+        .await
+        .unwrap();
     tracing::info!(
         "R.ODE Socket Is Started And Listening On Port: {}",
         *config::SERVER_PORT
@@ -27,10 +28,9 @@ pub async fn start_api() {
 pub async fn start_metrics() {
     let app = metrics::build();
 
-    // NOTE: expose metrics endpoint on a different port
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3001")
+    let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::METRICS_PORT))
         .await
         .unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
+    tracing::debug!("Metrics server is started and listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }
