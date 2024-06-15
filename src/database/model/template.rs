@@ -25,6 +25,7 @@ pub struct Template {
     pub local_path: String,
 
     /// Google drive link to the root folder
+    #[serde(skip)]
     pub url: String,
 }
 
