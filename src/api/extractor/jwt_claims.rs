@@ -7,17 +7,13 @@ use axum::RequestPartsExt;
 use axum_extra::headers::UserAgent;
 use axum_extra::headers::{authorization::Bearer, Authorization};
 use axum_extra::TypedHeader;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::app_state::AppState;
 use crate::config;
 use crate::Error;
-
-lazy_static! {
-    static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
-}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct JWTClaims {
@@ -41,7 +37,8 @@ impl FromRequestParts<Arc<AppState>> for JWTClaims {
 
         let token = bearer.token();
 
-        let token_data = decode::<JWTClaims>(token, &DECODING_KEY, &Validation::default())?;
+        let token_data =
+            decode::<JWTClaims>(token, &config::JWT_KEYPAIR.decoding, &Validation::default())?;
 
         let claims = token_data.claims.clone();
         let account_id = claims.sub;
