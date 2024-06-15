@@ -2734,7 +2734,6 @@ dependencies = [
  "http-body-util",
  "image 0.25.1",
  "jsonwebtoken",
- "lazy_static",
  "metrics",
  "metrics-exporter-prometheus",
  "mime_guess",

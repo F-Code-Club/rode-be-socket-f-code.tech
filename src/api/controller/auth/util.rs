@@ -1,19 +1,13 @@
 use dashmap::DashMap;
 
 use chrono::Local;
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{encode, Header};
 use serde::Serialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
 use crate::config;
-
-lazy_static! {
-    static ref REFRESH_ENCODING_KEY: EncodingKey =
-        EncodingKey::from_secret(config::JWT_REFRESH_SECRET.as_bytes());
-    static ref ENCODING_KEY: EncodingKey = EncodingKey::from_secret(config::JWT_SECRET.as_bytes());
-}
 
 #[derive(Serialize, ToSchema)]
 pub struct TokenPair {
@@ -38,7 +32,7 @@ impl TokenPair {
                 fingerprint: fingerprint.clone(),
                 exp: now + *config::JWT_EXPIRED_IN,
             },
-            &ENCODING_KEY,
+            &config::JWT_KEYPAIR.encoding,
         )?;
         let refresh_token = encode(
             &Header::default(),
@@ -47,7 +41,7 @@ impl TokenPair {
                 fingerprint,
                 exp: now + *config::JWT_REFRESH_EXPIRED_IN,
             },
-            &REFRESH_ENCODING_KEY,
+            &config::JWT_REFRESH_KEYPAIR.encoding,
         )?;
 
         // Revoke tokens

@@ -4,19 +4,13 @@ use axum::extract::State;
 use axum::Json;
 use axum_extra::headers::UserAgent;
 use axum_extra::TypedHeader;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Validation};
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
-use crate::config;
-use crate::Result;
+use crate::{config, Result};
 
 use super::util::TokenPair;
-
-lazy_static! {
-    static ref REFRESH_DECODING_KEY: DecodingKey =
-        DecodingKey::from_secret(config::JWT_REFRESH_SECRET.as_bytes());
-}
 
 /// Generate a new token pair with extended expired time using refresh token
 #[axum::debug_handler]
@@ -47,7 +41,7 @@ async fn refresh_internal(
 ) -> anyhow::Result<Json<TokenPair>> {
     let token_data = decode::<JWTClaims>(
         &refresh_token,
-        &REFRESH_DECODING_KEY,
+        &config::JWT_REFRESH_KEYPAIR.decoding,
         &Validation::default(),
     )?;
     let id = token_data.claims.sub;
