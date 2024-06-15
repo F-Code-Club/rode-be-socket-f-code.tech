@@ -2,13 +2,15 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use chrono::DateTime;
+use chrono::{DateTime, TimeZone as _};
 use chrono_tz::Tz;
+use sqlx::PgPool;
+use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Question, Room, Score, SubmitHistory, Template, TestCase};
-use crate::enums::RoomKind;
+use crate::enums::{ProgrammingLanguage, RoomKind};
 use crate::util::{self, scoring::ExecutionResult};
 use crate::{config, Error, Result};
 
@@ -51,12 +53,81 @@ pub async fn submit(
     Ok(execution_result)
 }
 
-fn get_additional_penalty(is_passed: bool, now: DateTime<Tz>) -> i32 {
+fn get_additional_penalty(is_passed: bool, open_time: DateTime<Tz>, now: DateTime<Tz>) -> i32 {
     if is_passed {
-        (now - *config::COMPETITION_START_TIME).num_seconds() as i32
+        (now - open_time).num_seconds() as i32
     } else {
         *config::FAILED_SUBMISSION_PENALTY
     }
+}
+
+async fn execute(
+    room: &Room,
+    question_id: Uuid,
+    language: ProgrammingLanguage,
+    code: &str,
+    database: &PgPool,
+) -> anyhow::Result<ExecutionResult> {
+    let (test_cases, template) = match room.r#type {
+        RoomKind::Backend => {
+            let test_cases = TestCase::get_many_by_question_id(question_id, database).await?;
+
+            (Some(test_cases), None)
+        }
+        RoomKind::Frontend => {
+            let template = Template::get_one_by_question_id(question_id, database).await?;
+
+            (None, Some(template))
+        }
+    };
+
+    let execution_result = util::scoring::score(language, code, test_cases, template, 0).await?;
+
+    Ok(execution_result)
+}
+
+async fn save_submission(
+    room: &Room,
+    question_id: Uuid,
+    member: &Member,
+    submit_count: i32,
+    language: ProgrammingLanguage,
+    code: String,
+    execution_result: &ExecutionResult,
+    now: DateTime<Tz>,
+    database: &PgPool,
+) -> anyhow::Result<()> {
+    let open_time = match config::TIME_ZONE.from_local_datetime(&room.open_time) {
+        chrono::offset::LocalResult::Single(open_time) => open_time,
+        _ => anyhow::bail!("Invalid room open time"),
+    };
+    let additional_penalty = get_additional_penalty(execution_result.score > 0, open_time, now);
+
+    let score_id = Score::update_or_insert(
+        room.id,
+        member.team_id,
+        additional_penalty,
+        now.naive_local(),
+        database,
+    )
+    .await?;
+
+    SubmitHistory::insert(
+        question_id,
+        score_id,
+        member.id,
+        submit_count + 1,
+        execution_result.run_time as i32,
+        execution_result.score as i32,
+        language,
+        code.len() as i32,
+        now.naive_local(),
+        code,
+        database,
+    )
+    .await?;
+
+    Ok(())
 }
 
 async fn submit_internal(
@@ -65,7 +136,6 @@ async fn submit_internal(
     data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
     let database = &state.database;
-    let (member_id, team_id) = (member.id, member.team_id);
     let SubmitData {
         room_id,
         question_id,
@@ -77,54 +147,27 @@ async fn submit_internal(
     let room = Room::get_one_by_id(room_id, &state.database).await?;
     anyhow::ensure!(room.is_open(now.naive_local()), "Room closed");
 
-    let question = Question::get_one_by_ids(question_id, room.stack_id, &state.database).await?;
-    let submit_count = SubmitHistory::count(question_id, member_id, &state.database).await? as i32;
-
+    let question = Question::get_one_by_ids(question_id, room.stack_id, database).await?;
+    let submit_count = SubmitHistory::count(question_id, member.id, database).await? as i32;
     anyhow::ensure!(
         submit_count < question.max_submit_time,
         "Reached the maxium number of submission(s)"
     );
 
-    let (test_cases, template) = match room.r#type {
-        RoomKind::Backend => {
-            let test_cases =
-                TestCase::get_many_by_question_id(question_id, &state.database).await?;
+    let execution_result = execute(&room, question_id, language, &code, database).await?;
 
-            (Some(test_cases), None)
-        }
-        RoomKind::Frontend => {
-            let template = Template::get_one_by_question_id(question_id, &state.database).await?;
-
-            (None, Some(template))
-        }
-    };
-
-    let execution_result = util::scoring::score(language, &code, test_cases, template, 0).await?;
-
-    let additional_penalty = get_additional_penalty(execution_result.score > 0, now);
-
-    let score_id = Score::update_or_insert(
-        room_id,
-        team_id,
-        additional_penalty,
-        now.naive_local(),
+    save_submission(
+        &room,
+        question_id,
+        &member,
+        submit_count,
+        language,
+        code,
+        &execution_result,
+        now,
         database,
     )
     .await?;
-
-    SubmitHistory::insert(
-        question_id,
-        score_id,
-        member_id,
-        submit_count + 1,
-        execution_result.run_time as i32,
-        execution_result.score as i32,
-        language,
-        code.len() as i32,
-        now.naive_local(),
-        code,
-        database,
-    ).await?;
 
     Ok(Json(execution_result))
 }

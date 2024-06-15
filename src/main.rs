@@ -31,8 +31,5 @@ async fn main() {
         )
         .init();
 
-    // Ensure that the competition start time is initialized or return error immediately at program start
-    let _ = *config::COMPETITION_START_TIME;
-
     let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
 }
