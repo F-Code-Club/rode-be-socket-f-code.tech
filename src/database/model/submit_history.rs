@@ -21,6 +21,7 @@ pub struct SubmitHistory {
 }
 
 impl SubmitHistory {
+    #[tracing::instrument(err)]
     pub async fn insert(self, database: &PgPool) -> anyhow::Result<()> {
         sqlx::query!(
             r#"
