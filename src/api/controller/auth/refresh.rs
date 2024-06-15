@@ -1,17 +1,24 @@
+use std::sync::Arc;
+
+use axum::extract::State;
 use axum::Json;
+use axum_extra::headers::UserAgent;
+use axum_extra::TypedHeader;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 
 use crate::api::extractor::JWTClaims;
+use crate::app_state::AppState;
 use crate::config;
 use crate::Result;
 
-use super::TokenPair;
+use super::util::TokenPair;
 
 lazy_static! {
     static ref REFRESH_DECODING_KEY: DecodingKey =
         DecodingKey::from_secret(config::JWT_REFRESH_SECRET.as_bytes());
 }
 
+/// Generate a new token pair with extended expired time using refresh token
 #[axum::debug_handler]
 #[utoipa::path (
     post,
@@ -23,14 +30,21 @@ lazy_static! {
         (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
     )
 )]
-/// Generate a new token pair with extended expired time using refresh token
-pub async fn refresh(refresh_token: String) -> Result<Json<TokenPair>> {
-    let token_pair = refresh_internal(refresh_token).await?;
+pub async fn refresh(
+    State(state): State<Arc<AppState>>,
+    TypedHeader(user_agent): TypedHeader<UserAgent>,
+    refresh_token: String,
+) -> Result<Json<TokenPair>> {
+    let token_pair = refresh_internal(state, user_agent, refresh_token).await?;
 
     Ok(token_pair)
 }
 
-pub async fn refresh_internal(refresh_token: String) -> anyhow::Result<Json<TokenPair>> {
+async fn refresh_internal(
+    state: Arc<AppState>,
+    user_agent: UserAgent,
+    refresh_token: String,
+) -> anyhow::Result<Json<TokenPair>> {
     let token_data = decode::<JWTClaims>(
         &refresh_token,
         &REFRESH_DECODING_KEY,
@@ -38,7 +52,7 @@ pub async fn refresh_internal(refresh_token: String) -> anyhow::Result<Json<Toke
     )?;
     let id = token_data.claims.sub;
 
-    let token_pair = TokenPair::new(id)?;
+    let token_pair = TokenPair::generate(id, user_agent.to_string(), &state.account_fingerprints)?;
 
     Ok(Json(token_pair))
 }

@@ -30,7 +30,6 @@ impl Modify for SecurityAddon {
         controller::ping,
         controller::auth::login,
         controller::auth::refresh,
-        controller::auth::session_socket,
         controller::room::join,
         controller::team::get_id,
         controller::editor_socket,

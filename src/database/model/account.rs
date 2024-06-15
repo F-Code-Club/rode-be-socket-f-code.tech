@@ -26,6 +26,10 @@ pub struct Account {
 }
 
 impl Account {
+    pub fn is_usable(&self) -> bool {
+        self.is_enabled && !self.is_locked
+    }
+
     async fn get_one_by_id_id_internal(id: Uuid, database: &PgPool) -> sqlx::Result<Account> {
         sqlx::query_as_unchecked!(Account, "SELECT * FROM accounts WHERE id = $1", id)
             .fetch_one(database)
