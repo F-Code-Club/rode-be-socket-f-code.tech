@@ -2,18 +2,28 @@ use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
 use tokio::sync::OnceCell;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Default, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Default, Serialize, ToSchema, sqlx::FromRow)]
 pub struct TestCase {
+    /// # Notes
+    /// - Skipped during serializing since id is only relevant to server side
+    #[serde(skip)]
     pub id: i32,
+
+    /// # Notes
+    /// - Skipped during serializing since id is only relevant to server side
+    #[serde(skip)]
     pub question_id: Uuid,
+
     pub input: String,
+
     pub output: String,
 }
 
 impl TestCase {
-    pub async fn get_many_by_question_id_internal(
+    async fn get_many_by_question_id_internal(
         question_id: Uuid,
         database: &PgPool,
     ) -> sqlx::Result<Vec<TestCase>> {
