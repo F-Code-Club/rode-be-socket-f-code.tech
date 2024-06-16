@@ -83,7 +83,7 @@ pub fn build(state: Arc<AppState>) -> Router {
         .route("/question/get", get(controller::question::get))
         .route(
             "/question/get-by-room",
-            post(controller::question::get_by_room),
+            get(controller::question::get_by_room),
         )
         .route(
             "/scoring/run",

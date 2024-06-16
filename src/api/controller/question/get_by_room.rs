@@ -1,15 +1,22 @@
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::Json;
+use serde::Deserialize;
 use sqlx::PgPool;
+use utoipa::IntoParams;
 use uuid::Uuid;
 
 use crate::app_state::AppState;
 use crate::Result;
 
-async fn get_by_room_internal(
+#[derive(Deserialize, IntoParams)]
+pub struct GetQuestionByRoomData {
     room_code: String,
+}
+
+async fn get_by_room_internal(
+    data: GetQuestionByRoomData,
     database: &PgPool,
 ) -> anyhow::Result<Json<Vec<Uuid>>> {
     let question_ids = sqlx::query_scalar!(
@@ -20,7 +27,7 @@ INNER JOIN question_stacks ON rooms.stack_id = question_stacks.id
 INNER JOIN questions ON rooms.stack_id = questions.stack_id
 WHERE rooms.code = $1
         "#,
-        room_code
+        data.room_code
     )
     .fetch_all(database)
     .await?;
@@ -32,9 +39,8 @@ WHERE rooms.code = $1
     get,
     path = "/question/get-by-room",
     tag = "Question",
-    request_body(
-        content = String,
-        description = "Room code"
+    params(
+        GetQuestionByRoomData
     ),
     responses (
         (status = StatusCode::OK, description = "Question ids of the room", body = Vec<Uuid>),
@@ -43,9 +49,9 @@ WHERE rooms.code = $1
 )]
 pub async fn get_by_room(
     State(state): State<Arc<AppState>>,
-    room_code: String,
+    Query(data): Query<GetQuestionByRoomData>,
 ) -> Result<Json<Vec<Uuid>>> {
-    let question_ids = get_by_room_internal(room_code, &state.database).await?;
+    let question_ids = get_by_room_internal(data, &state.database).await?;
 
     Ok(question_ids)
 }
