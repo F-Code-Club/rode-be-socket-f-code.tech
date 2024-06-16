@@ -17,7 +17,7 @@ async fn get_by_room_internal(
 SELECT questions.id
 FROM rooms
 INNER JOIN question_stacks ON rooms.stack_id = question_stacks.id
-INNER JOIN questions ON rooms.stack_id = questions.id 
+INNER JOIN questions ON rooms.stack_id = questions.stack_id
 WHERE rooms.code = $1
         "#,
         room_code
