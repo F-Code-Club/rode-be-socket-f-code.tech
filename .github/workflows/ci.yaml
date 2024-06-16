@@ -2,6 +2,7 @@ name: CI R.ODE Backend Socket
 on:
   pull_request:
     branches: ["develop"]
+  workflow_dispatch:
 
 jobs:
   rode-be-socket-clean-code:
