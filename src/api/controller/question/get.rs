@@ -18,12 +18,13 @@ pub struct QuestionData {
 }
 
 #[utoipa::path(
-    get,
+    post,
     path = "/question/get",
     tag = "Question",
     request_body(
         content = Uuid,
-        description = "Question id"
+        description = "Question id",
+        content_type = "application/json"
     ),
     responses (
         (status = StatusCode::OK, description = "requested question's data", body = Question),
