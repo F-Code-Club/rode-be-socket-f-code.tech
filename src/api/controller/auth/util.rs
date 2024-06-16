@@ -38,7 +38,7 @@ impl TokenPair {
             &Header::default(),
             &JWTClaims {
                 sub: id,
-                fingerprint,
+                fingerprint: fingerprint.clone(),
                 exp: now + *config::JWT_REFRESH_EXPIRED_IN,
             },
             &config::JWT_REFRESH_KEYPAIR.encoding,
@@ -46,11 +46,11 @@ impl TokenPair {
 
         // Revoke tokens
         match account_fingerprints.get_mut(&id) {
-            Some(mut token) => {
-                *token = token.clone();
+            Some(mut fingerprint_ref) => {
+                *fingerprint_ref = fingerprint;
             }
             None => {
-                account_fingerprints.insert(id, token.clone());
+                account_fingerprints.insert(id, fingerprint);
             }
         }
 
