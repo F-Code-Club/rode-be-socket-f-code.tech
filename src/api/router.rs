@@ -74,10 +74,6 @@ pub fn build(state: Arc<AppState>) -> Router {
         .route("/", get(controller::ping))
         .route("/auth/login", post(controller::auth::login))
         .route("/auth/refresh", post(controller::auth::refresh))
-        .route(
-            "/auth/session/socket",
-            get(controller::auth::session_socket),
-        )
         .route("/room/join", post(controller::room::join))
         .route("/team/get-id", get(controller::team::get_id))
         .route(
@@ -85,6 +81,10 @@ pub fn build(state: Arc<AppState>) -> Router {
             get(controller::editor_socket),
         )
         .route("/question/get", get(controller::question::get))
+        .route(
+            "/question/get-by-room",
+            get(controller::question::get_by_room),
+        )
         .route(
             "/scoring/run",
             post(controller::scoring::run).layer(middleware.clone()),

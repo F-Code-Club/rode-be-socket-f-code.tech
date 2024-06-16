@@ -50,6 +50,7 @@ impl Question {
         .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_ids(
         id: Uuid,
         stack_id: Uuid,
@@ -71,5 +72,14 @@ impl Question {
             Ok(question) => Ok(question),
             Err(error) => anyhow::bail!(error.to_string()),
         }
+    }
+
+    #[tracing::instrument(err)]
+    pub async fn get_one_by_id(id: Uuid, database: &PgPool) -> anyhow::Result<Question> {
+        let question = sqlx::query_as!(Question, "SELECT * FROM questions WHERE id = $1", id)
+            .fetch_one(database)
+            .await?;
+
+        Ok(question)
     }
 }

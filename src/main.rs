@@ -13,9 +13,6 @@ pub mod util;
 
 pub use error::{Error, Result};
 
-#[macro_use]
-extern crate lazy_static;
-
 use app_state::AppState;
 use tracing_subscriber::fmt::time::ChronoLocal;
 use tracing_subscriber::layer::SubscriberExt;

@@ -26,6 +26,7 @@ impl Member {
         .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_account_id(
         account_id: Uuid,
         database: &PgPool,

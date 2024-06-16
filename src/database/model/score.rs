@@ -14,6 +14,7 @@ pub struct Score {
 }
 
 impl Score {
+    #[tracing::instrument(err)]
     pub async fn get_optional_by_ids(
         room_id: i32,
         team_id: i32,
@@ -31,6 +32,7 @@ impl Score {
         Ok(score)
     }
 
+    #[tracing::instrument(err)]
     pub async fn insert(self, database: &PgPool) -> anyhow::Result<Uuid> {
         let id = sqlx::query_scalar!(
             r#"

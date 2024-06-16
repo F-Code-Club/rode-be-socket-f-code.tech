@@ -17,9 +17,11 @@ fn extract_file_id(url: &str) -> Option<&str> {
         None
     }
 }
+
 pub struct HubDrive {
     instance: DriveHub<HttpsConnector<HttpConnector>>,
 }
+
 impl HubDrive {
     pub async fn new() -> anyhow::Result<Self> {
         let service_account = oauth2::ServiceAccountKey {

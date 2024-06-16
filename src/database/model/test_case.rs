@@ -26,6 +26,7 @@ impl TestCase {
         .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_many_by_question_id(
         question_id: Uuid,
         database: &PgPool,

@@ -28,6 +28,7 @@ impl Room {
             .await
     }
 
+    #[tracing::instrument(err)]
     pub async fn get_one_by_id(id: i32, database: &PgPool) -> anyhow::Result<Room> {
         // TODO: find best cache size
         const CACHE_SIZE: u64 = 50;

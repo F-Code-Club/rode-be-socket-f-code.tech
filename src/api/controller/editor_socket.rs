@@ -9,18 +9,12 @@ use axum::extract::{
 use axum::response::IntoResponse;
 use futures::stream::{SplitSink, SplitStream};
 use futures::{Stream, StreamExt};
-use jsonwebtoken::DecodingKey;
 use tokio::sync::{Mutex, RwLock};
 use yrs::{sync::Awareness, Doc};
 use yrs_warp::{broadcast::BroadcastGroup, AwarenessRef};
 
 use crate::app_state::AppState;
-use crate::config;
 use crate::Error;
-
-lazy_static! {
-    static ref DECODING_KEY: DecodingKey = DecodingKey::from_secret(config::JWT_SECRET.as_bytes());
-}
 
 #[utoipa::path (
     get,
