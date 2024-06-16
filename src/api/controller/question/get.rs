@@ -33,7 +33,7 @@ pub struct QuestionData {
         GetQuestionData
     ),
     responses (
-        (status = StatusCode::OK, description = "requested question's data", body = Question),
+        (status = StatusCode::OK, description = "requested question's data", body = QuestionData),
         (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
     ),
 )]
