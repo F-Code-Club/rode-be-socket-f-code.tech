@@ -1,7 +1,8 @@
-name: Build R.ODE Backend Socket
+name: Check Audit R.ODE Backend Socket
 on:
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   rode-be-socket-clean-code:
