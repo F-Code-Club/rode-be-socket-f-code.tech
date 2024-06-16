@@ -80,7 +80,7 @@ pub fn build(state: Arc<AppState>) -> Router {
             "/editor/socket/:question_id/:team_id",
             get(controller::editor_socket),
         )
-        .route("/question/get", post(controller::question::get))
+        .route("/question/get", get(controller::question::get))
         .route(
             "/question/get-by-room",
             post(controller::question::get_by_room),
