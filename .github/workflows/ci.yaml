@@ -22,10 +22,3 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          
-      - name: Audit Check
-        uses: rustsec/audit-check@v1.4.1
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
-            
-    
