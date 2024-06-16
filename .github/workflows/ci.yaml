@@ -1,4 +1,4 @@
-name: Build R.ODE Backend Socket
+name: CI R.ODE Backend Socket
 on:
   pull_request:
     branches: ["develop"]
