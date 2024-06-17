@@ -9,6 +9,7 @@ pub struct TestCase {
     pub id: i32,
     pub question_id: Uuid,
     pub input: String,
+    pub is_visible: bool,
     pub output: String,
 }
 
