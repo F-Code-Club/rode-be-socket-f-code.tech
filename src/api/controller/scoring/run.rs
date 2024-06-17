@@ -65,7 +65,7 @@ async fn run_internal(
                 TestCase::get_many_by_question_id(data.question_id, &state.database).await?;
             let public_test_cases = test_cases
                 .into_iter()
-                .take(*config::PUBLIC_TEST_CASE_COUNT)
+                .filter(|test_case| test_case.is_visible) 
                 .collect::<Vec<_>>();
 
             (Some(public_test_cases), None)
