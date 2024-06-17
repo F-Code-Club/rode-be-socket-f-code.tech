@@ -8,7 +8,7 @@ use crate::app_state::AppState;
 use crate::database::model::{Member, Room, Template, TestCase};
 use crate::enums::RoomKind;
 use crate::util::{self, scoring::ExecutionResult};
-use crate::{config, Error, Result};
+use crate::{Error, Result};
 
 use super::SubmitData;
 
