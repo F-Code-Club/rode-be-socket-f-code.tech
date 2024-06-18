@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
 pub struct CompilationError {
     pub reason: String,
 }
@@ -28,10 +28,8 @@ impl Display for CompilationError {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub struct RuntimeError {
-    pub reason: String,
-}
+#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
+pub struct RuntimeError;
 
 impl Display for RuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -40,9 +38,14 @@ impl Display for RuntimeError {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ExecutionResult {
-    pub score: u32,
-    pub run_time: u32,
+#[serde(tag = "type")]
+pub enum ExecutionResult {
+    CompilationError(CompilationError),
+    RuntimeError(RuntimeError),
+    Succeed {
+        score: u32,
+        runtime: u32,
+    },
 }
 
 fn random_directory() -> PathBuf {
@@ -160,7 +163,10 @@ mod tests {
         )
         .await
         .unwrap();
-        assert!(result.score == QUESTION_SCORE);
+        if let ExecutionResult::Succeed { score, runtime: _ } = result {
+            assert!(score == QUESTION_SCORE)
+        }
+        assert!(false)
     }
 
     #[rstest]
