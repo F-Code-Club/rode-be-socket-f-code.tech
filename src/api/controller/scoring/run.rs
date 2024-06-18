@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use sqlx::query_as;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
@@ -62,16 +61,7 @@ async fn run_internal(
 
     let (test_cases, template) = match room.r#type {
         RoomKind::Backend => {
-            let test_cases = query_as!(
-                TestCase,
-                r#"
-                SELECT * from test_cases
-                WHERE is_visible=true AND question_id = $1
-                "#,
-                data.question_id
-            )
-            .fetch_all(&state.database)
-            .await?;
+            let test_cases = TestCase::get_visible_by_question_id(data.question_id, &state.database).await?;
 
             (Some(test_cases), None)
         }
