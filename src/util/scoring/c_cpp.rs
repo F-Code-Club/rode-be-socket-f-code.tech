@@ -6,29 +6,45 @@ use std::process::Command;
 use std::process::Stdio;
 use std::str;
 use std::time::Instant;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 use crate::database::model::TestCase;
 use crate::enums::ProgrammingLanguage;
+use crate::util;
 
 use super::write_to_random_file;
+use super::CompilationError;
 use super::ExecutionResult;
+use super::RuntimeError;
 
-async fn compile(code_path: PathBuf) -> anyhow::Result<PathBuf> {
+async fn compile(code_path: PathBuf) -> anyhow::Result<Result<PathBuf, CompilationError>> {
     let executable_path = code_path.with_extension("");
 
     // Command: gcc $code_path -o $executable_path
-    tokio::process::Command::new("gcc")
+    let mut process = tokio::process::Command::new("gcc")
         .arg(code_path)
         .arg("-o")
         .arg(&executable_path)
-        .spawn()?
-        .wait()
-        .await?;
+        .stderr(Stdio::piped())
+        .spawn()?;
 
-    Ok(executable_path)
+    process.wait().await?;
+
+    let compilation_error = util::process::capture_stderr_async(&mut process).await?;
+
+    if !compilation_error.is_empty() {
+        return Ok(Err(CompilationError {
+            reason: compilation_error,
+        }));
+    }
+
+    Ok(Ok(executable_path))
 }
 
-fn execute_one(executable_path: &Path, testcase: &TestCase) -> (bool, u32) {
+fn execute_one(
+    executable_path: &Path,
+    testcase: &TestCase,
+) -> anyhow::Result<Result<(bool, u32), RuntimeError>> {
     let start = Instant::now();
 
     // Run the code
@@ -36,22 +52,29 @@ fn execute_one(executable_path: &Path, testcase: &TestCase) -> (bool, u32) {
     let mut process = Command::new(executable_path)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
+        .spawn()?;
 
     // Write input to stdin
     let mut stdin = process.stdin.take().unwrap();
-    stdin.write_all(testcase.input.as_bytes()).unwrap();
+    stdin.write_all(testcase.input.as_bytes())?;
     drop(stdin);
 
-    let output = process.wait_with_output().unwrap();
+    let runtime_error = util::process::capture_stderr(&mut process)?;
+
+    let output = process.wait_with_output()?;
 
     let end = Instant::now();
 
-    let is_matched = String::from_utf8(output.stdout).unwrap().trim() == testcase.output.trim();
+    if !runtime_error.is_empty() {
+        return Ok(Err(RuntimeError {
+            reason: runtime_error,
+        }));
+    }
+
+    let is_matched = String::from_utf8(output.stdout)?.trim() == testcase.output.trim();
     let run_time = (end - start).as_millis() as u32;
 
-    (is_matched, run_time)
+    Ok(Ok((is_matched, run_time)))
 }
 
 pub async fn execute(
@@ -69,7 +92,7 @@ pub async fn execute(
             .par_iter()
             .map(|testcase| execute_one(&executable_path, testcase))
             .reduce(
-                || (true, 0),
+                || Ok(Ok((true, 0))),
                 |acc, current| {
                     let is_matched = acc.0 && current.0;
                     let run_time = acc.1 + current.1;
