@@ -8,7 +8,7 @@ use crate::app_state::AppState;
 use crate::database::model::{Member, Room, Template, TestCase};
 use crate::enums::RoomKind;
 use crate::util::{self, scoring::ExecutionResult};
-use crate::{config, Error, Result};
+use crate::{Error, Result};
 
 use super::SubmitData;
 
@@ -61,14 +61,9 @@ async fn run_internal(
 
     let (test_cases, template) = match room.r#type {
         RoomKind::Backend => {
-            let test_cases =
-                TestCase::get_many_by_question_id(data.question_id, &state.database).await?;
-            let public_test_cases = test_cases
-                .into_iter()
-                .take(*config::PUBLIC_TEST_CASE_COUNT)
-                .collect::<Vec<_>>();
+            let test_cases = TestCase::get_visible(true, data.question_id, &state.database).await?;
 
-            (Some(public_test_cases), None)
+            (Some(test_cases), None)
         }
         RoomKind::Frontend => {
             let template =
