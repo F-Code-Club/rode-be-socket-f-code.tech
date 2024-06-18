@@ -1,12 +1,9 @@
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::io::Write;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
-use std::process::Stdio;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::str;
 use std::time::Instant;
-use tokio::io::{AsyncBufReadExt, BufReader};
 
 use crate::database::model::TestCase;
 use crate::enums::ProgrammingLanguage;
@@ -66,9 +63,7 @@ fn execute_one(
     let end = Instant::now();
 
     if !runtime_error.is_empty() {
-        return Ok(Err(RuntimeError {
-            reason: runtime_error,
-        }));
+        return Ok(Err(RuntimeError));
     }
 
     let is_matched = String::from_utf8(output.stdout)?.trim() == testcase.output.trim();
@@ -84,29 +79,30 @@ pub async fn execute(
 ) -> anyhow::Result<ExecutionResult> {
     let code_path = write_to_random_file(code, ProgrammingLanguage::C_CPP).await?;
 
-    let executable_path = compile(code_path).await?;
+    let executable_path = compile(code_path).await??;
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let (is_all_matched, total_run_time) = testcases
+        let execution_result_raw = testcases
             .par_iter()
             .map(|testcase| execute_one(&executable_path, testcase))
-            .reduce(
-                || Ok(Ok((true, 0))),
-                |acc, current| {
-                    let is_matched = acc.0 && current.0;
-                    let run_time = acc.1 + current.1;
+            .collect::<anyhow::Result<Result<Vec<_>, RuntimeError>>>();
 
-                    (is_matched, run_time)
-                },
-            );
-
-        let _ = send.send((is_all_matched, total_run_time));
+        let _ = send.send(execution_result_raw);
     });
-    let (is_all_matched, total_run_time) = recv.await?;
+    let execution_result_raw = recv.await???;
+    let (is_all_matched, total_run_time) =
+        execution_result_raw
+            .into_iter()
+            .fold((true, 0), |acc, current| {
+                let is_matched = acc.0 && current.0;
+                let run_time = acc.1 + current.1;
 
-    Ok(ExecutionResult {
+                (is_matched, run_time)
+            });
+
+    Ok(ExecutionResult::Succeed {
         score: if is_all_matched { question_score } else { 0 },
-        run_time: total_run_time,
+        runtime: total_run_time,
     })
 }
