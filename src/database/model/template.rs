@@ -30,7 +30,7 @@ pub struct Template {
 
     /// For front-end related question only
     /// Refer to [CSS Battle](https://cssbattle.dev) for further information
-    pub color_code: String,
+    pub color_code: Option<String>,
 }
 
 impl Template {
