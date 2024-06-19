@@ -1,0 +1,22 @@
+name: Check Audit R.ODE Backend Socket
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: ['develop']
+
+jobs:
+  rode-be-socket-clean-code:
+    name: Check Audit
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Develop
+        uses: actions/checkout@v3
+          
+      - name: Audit Check
+        uses: rustsec/audit-check@v1.4.1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+            
+    

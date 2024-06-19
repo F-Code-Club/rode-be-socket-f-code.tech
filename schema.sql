@@ -158,6 +158,7 @@ CREATE TABLE public.test_cases (
     id integer NOT NULL,
     input character varying NOT NULL,
     output character varying NOT NULL,
+    is_visible boolean DEFAULT false NOT NULL,
     question_id uuid NOT NULL
 );
 
