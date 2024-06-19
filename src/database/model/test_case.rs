@@ -19,10 +19,27 @@ pub struct TestCase {
 
     pub input: String,
 
+    #[serde(skip)]
+    pub is_visible: bool,
+
     pub output: String,
 }
 
 impl TestCase {
+    pub async fn get_visible(is_visible: bool, question_id: Uuid, database: &PgPool) -> sqlx::Result<Vec<TestCase>> {
+        sqlx::query_as!(
+            TestCase,
+            r#"
+                SELECT * FROM test_cases
+                WHERE is_visible= $1 AND question_id = $2
+            "#,
+            is_visible,
+            question_id
+        )
+        .fetch_all(database)
+        .await
+    }
+
     async fn get_many_by_question_id_internal(
         question_id: Uuid,
         database: &PgPool,
