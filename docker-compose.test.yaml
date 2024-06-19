@@ -3,6 +3,7 @@ services:
   rode-battle-socket:
     container_name: rode-battle-socket-management
     image: ${DOCKER_HUB_URL}/rode-be-socket:nightly
+    restart: unless-stopped
     ports:
       - ${PORT}:${PORT}
     environment:
