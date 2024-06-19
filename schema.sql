@@ -124,7 +124,7 @@ CREATE TABLE public.submit_histories (
     character_count integer NOT NULL,
     last_submit_time timestamp without time zone DEFAULT now() NOT NULL,
     submissions text NOT NULL,
-    CONSTRAINT "CHK_1555aa1767f32960a1fa498fab" CHECK ((score >= 1)),
+    CONSTRAINT "CHK_1555aa1767f32960a1fa498fab" CHECK ((score >= 0)),
     CONSTRAINT "CHK_1dbdeff7aaca4594a6d8d187c2" CHECK ((run_time >= 0)),
     CONSTRAINT "CHK_20ac7fde4f808cdb7506aeda9f" CHECK ((character_count >= 0)),
     CONSTRAINT "CHK_39e5e5e5f354f7cf3bf3056ecb" CHECK ((submit_number >= 1))
