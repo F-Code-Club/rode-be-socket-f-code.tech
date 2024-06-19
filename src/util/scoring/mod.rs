@@ -4,22 +4,48 @@ mod java;
 mod python;
 
 use std::env;
+use std::fmt::Display;
 use std::path::PathBuf;
 
 use anyhow::Context;
 use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 
+#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
+pub struct CompilationError {
+    pub reason: String,
+}
+
+impl Display for CompilationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
+pub struct RuntimeError;
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ExecutionResult {
-    pub score: u32,
-    pub run_time: u32,
+#[serde(tag = "type")]
+pub enum ExecutionResult {
+    CompilationError(CompilationError),
+    RuntimeError(RuntimeError),
+    Succeed {
+        score: u32,
+        runtime: u32,
+    },
 }
 
 fn random_directory() -> PathBuf {
@@ -137,7 +163,10 @@ mod tests {
         )
         .await
         .unwrap();
-        assert!(result.score == QUESTION_SCORE);
+        if let ExecutionResult::Succeed { score, runtime: _ } = result {
+            assert!(score == QUESTION_SCORE)
+        }
+        assert!(false)
     }
 
     #[rstest]
@@ -163,11 +192,11 @@ mod tests {
         let mut buffer = Vec::new();
         template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
 
-        let percent:f32 = match css::render_diff_image(&buffer, html).await? {
+        let percent: f32 = match css::render_diff_image(&buffer, html).await? {
             (match_percent, _) => match_percent,
         };
 
-        assert!(percent > 90.0); 
+        assert!(percent > 90.0);
         Ok(())
     }
 }

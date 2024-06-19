@@ -107,8 +107,8 @@ pub async fn execute(code: &str, template: Template) -> anyhow::Result<Execution
         &template_buffer, 
         code.to_owned())
         .await?;
-    Ok(ExecutionResult {
+    Ok(ExecutionResult::Succeed {
         score: percent as u32,
-        run_time: 0,
+        runtime: 0,
     })
 }

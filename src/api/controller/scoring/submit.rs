@@ -89,18 +89,21 @@ async fn submit_internal(
     let execution_result =
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
-    save_submission(
-        data.room_id,
-        data.question_id,
-        team_id,
-        member.id,
-        submit_count,
-        data.language,
-        data.code,
-        &execution_result,
-        &state.database,
-    )
-    .await?;
+    if let ExecutionResult::Succeed { score, runtime } = execution_result {
+        save_submission(
+            data.room_id,
+            data.question_id,
+            team_id,
+            member.id,
+            submit_count,
+            data.language,
+            data.code,
+            score as i32,
+            runtime as i32,
+            &state.database,
+        )
+        .await?;
+    }
 
     Ok(Json(execution_result))
 }
@@ -159,7 +162,8 @@ pub async fn save_submission(
     submit_count: i32,
     language: ProgrammingLanguage,
     code: String,
-    execution_result: &ExecutionResult,
+    score: i32,
+    runtime: i32,
     database: &PgPool,
 ) -> anyhow::Result<()> {
     let now = util::time::now().naive_local();
@@ -170,7 +174,7 @@ pub async fn save_submission(
             let new_score = Score {
                 room_id,
                 team_id,
-                total_score: execution_result.score as i32,
+                total_score: score,
                 last_submit_time: now,
                 ..Default::default()
             };
@@ -185,7 +189,7 @@ pub async fn save_submission(
             penalty,
         }) => {
             let additional_penalty =
-                get_additional_penalty(id, execution_result.score as i32, database).await?;
+                get_additional_penalty(id, score, database).await?;
             sqlx::query!(
                 r#"
                 UPDATE scores
@@ -193,7 +197,7 @@ pub async fn save_submission(
                 WHERE id = $1
                 "#,
                 id,
-                total_score + execution_result.score as i32,
+                total_score + score,
                 now,
                 penalty + additional_penalty
             )
@@ -210,8 +214,8 @@ pub async fn save_submission(
         question_id,
         member_id,
         submit_number: submit_count + 1,
-        run_time: execution_result.run_time as i32,
-        score: execution_result.score as i32,
+        run_time: runtime,
+        score,
         language,
         character_count: code.len() as i32,
         last_submit_time: now,
