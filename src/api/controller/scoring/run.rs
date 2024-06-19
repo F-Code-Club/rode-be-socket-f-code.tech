@@ -61,7 +61,7 @@ async fn run_internal(
 
     let (test_cases, template) = match room.r#type {
         RoomKind::Backend => {
-            let test_cases = TestCase::get_visible_by_question_id(data.question_id, &state.database).await?;
+            let test_cases = TestCase::get_visible(true, data.question_id, &state.database).await?;
 
             (Some(test_cases), None)
         }
