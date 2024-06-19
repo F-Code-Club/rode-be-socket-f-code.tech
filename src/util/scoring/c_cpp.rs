@@ -49,6 +49,7 @@ fn execute_one(
     let mut process = Command::new(executable_path)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     // Write input to stdin
@@ -79,7 +80,12 @@ pub async fn execute(
 ) -> anyhow::Result<ExecutionResult> {
     let code_path = write_to_random_file(code, ProgrammingLanguage::C_CPP).await?;
 
-    let executable_path = compile(code_path).await??;
+    let executable_path = match compile(code_path).await? {
+        Ok(value) => value,
+        Err(compilation_error) => {
+            return Ok(ExecutionResult::CompilationError(compilation_error));
+        }
+    };
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
@@ -90,7 +96,12 @@ pub async fn execute(
 
         let _ = send.send(execution_result_raw);
     });
-    let execution_result_raw = recv.await???;
+    let execution_result_raw = match recv.await?? {
+        Ok(value) => value,
+        Err(runtime_error) => {
+            return Ok(ExecutionResult::RuntimeError(runtime_error));
+        }
+    };
     let (is_all_matched, total_run_time) =
         execution_result_raw
             .into_iter()

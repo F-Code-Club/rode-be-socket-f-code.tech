@@ -25,6 +25,7 @@ fn execute_one(
         .arg(executable_path)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     // Write input to stdin
@@ -64,7 +65,10 @@ pub async fn execute(
 
         let _ = send.send(execution_result_raw);
     });
-    let execution_result_raw = recv.await???;
+    let execution_result_raw = match recv.await?? {
+        Ok(value) => value,
+        Err(runtime_error) => return Ok(ExecutionResult::RuntimeError(runtime_error)),
+    };
     let (is_all_matched, total_run_time) =
         execution_result_raw
             .into_iter()

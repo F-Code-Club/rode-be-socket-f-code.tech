@@ -34,7 +34,10 @@ async fn compile(code_path: &Path) -> anyhow::Result<Result<(), CompilationError
     Ok(Ok(()))
 }
 
-fn execute_one(project_path: &Path, testcase: &TestCase) -> anyhow::Result<Result<(bool, u32), RuntimeError>> {
+fn execute_one(
+    project_path: &Path,
+    testcase: &TestCase,
+) -> anyhow::Result<Result<(bool, u32), RuntimeError>> {
     let start = Instant::now();
 
     // Run the code
@@ -44,6 +47,7 @@ fn execute_one(project_path: &Path, testcase: &TestCase) -> anyhow::Result<Resul
         .arg("Main")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     // Write input to stdin
@@ -75,7 +79,12 @@ pub async fn execute(
     let code_path = write_to_random_file(code, ProgrammingLanguage::Java).await?;
     let project_path = code_path.parent().unwrap().to_path_buf();
 
-    compile(&code_path).await??;
+    match compile(&code_path).await? {
+        Ok(_) => {}
+        Err(compilation_error) => {
+            return Ok(ExecutionResult::CompilationError(compilation_error));
+        }
+    }
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
@@ -86,7 +95,12 @@ pub async fn execute(
 
         let _ = send.send(execution_result_raw);
     });
-    let execution_result_raw = recv.await???;
+    let execution_result_raw = match recv.await?? {
+        Ok(value) => value,
+        Err(runtime_error) => {
+            return Ok(ExecutionResult::RuntimeError(runtime_error));
+        }
+    };
     let (is_all_matched, total_run_time) =
         execution_result_raw
             .into_iter()
