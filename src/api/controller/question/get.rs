@@ -21,8 +21,9 @@ pub struct QuestionData {
     #[serde(flatten)]
     pub question: model::Question,
     #[schema(inline)]
-    #[serde(flatten)]
     pub template: model::Template,
+    #[schema(inline)]
+    pub test_cases: Vec<model::TestCase>,
 }
 
 #[utoipa::path(
@@ -53,6 +54,12 @@ async fn get_internal(
     let question = model::Question::get_one_by_id(data.question_id, &state.database).await?;
     let template =
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
+    let test_cases =
+        model::TestCase::get_many_by_question_id(data.question_id, &state.database).await?;
 
-    Ok(Json(QuestionData { question, template }))
+    Ok(Json(QuestionData {
+        question,
+        template,
+        test_cases,
+    }))
 }

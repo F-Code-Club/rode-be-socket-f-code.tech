@@ -21,11 +21,16 @@ pub struct Template {
     #[serde(skip)]
     pub question_id: Uuid,
 
-    /// Path of the template files, relative to the root folder specified in [url](Template::url)
+    /// Path of the template when downloaded to the server
+    #[serde(skip)]
     pub local_path: String,
 
-    /// Google drive link to the root folder
+    /// Google drive link to the template file
     pub url: String,
+
+    /// For front-end related question only
+    /// Refer to [CSS Battle](https://cssbattle.dev) for further information
+    pub color_code: String,
 }
 
 impl Template {
