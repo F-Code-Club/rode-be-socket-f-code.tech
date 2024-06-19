@@ -28,8 +28,8 @@ impl SubmitHistory {
             INSERT INTO submit_histories (question_id, score_id, member_id, submit_number, run_time, score, language, character_count, last_submit_time, submissions)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             "#,
-            self.score_id,
             self.question_id,
+            self.score_id,
             self.member_id,
             self.submit_number,
             self.run_time,
