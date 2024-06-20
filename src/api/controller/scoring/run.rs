@@ -7,8 +7,7 @@ use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Room, Template, TestCase};
 use crate::enums::RoomKind;
-use crate::util::scoring::ExecutionSummary;
-use crate::util::{self, scoring::ExecutionResult};
+use crate::util::{self, scoring::ExecutionSummary};
 use crate::{Error, Result};
 
 use super::SubmitData;

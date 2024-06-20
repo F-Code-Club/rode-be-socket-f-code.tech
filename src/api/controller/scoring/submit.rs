@@ -2,15 +2,14 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use sqlx::{Execute, PgPool};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Question, Room, Score, SubmitHistory, Template, TestCase};
 use crate::enums::{ProgrammingLanguage, RoomKind};
-use crate::util::scoring::ExecutionSummary;
-use crate::util::{self, scoring::ExecutionResult};
+use crate::util::{self, scoring::ExecutionSummary};
 use crate::{Error, Result};
 
 use super::SubmitData;
@@ -20,7 +19,7 @@ use super::SubmitData;
     tag = "Scoring",
     path = "/scoring/submit",
     responses (
-        (status = Status::OK, description = "Score of the code", body = ExecutionResult),
+        (status = Status::OK, description = "Score of the code", body = ExecutionSummary),
         (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
         (
             status = StatusCode::UNAUTHORIZED,
@@ -90,28 +89,21 @@ async fn submit_internal(
     let execution_result =
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
-    match &execution_result {
-        ExecutionSummary::Executed(ExecutionResult {
-            score,
-            run_time,
-            details: _,
-        }) => {
-            save_submission(
-                data.room_id,
-                data.question_id,
-                team_id,
-                member.id,
-                submit_count,
-                data.language,
-                data.code,
-                *score as i32,
-                *run_time as i32,
-                &state.database,
-            )
-            .await?;
-        }
-        ExecutionSummary::CompilationError(compilation_error)
-    }
+    let (score, run_time) = execution_result.get_metrics();
+
+    save_submission(
+        data.room_id,
+        data.question_id,
+        team_id,
+        member.id,
+        submit_count,
+        data.language,
+        data.code,
+        score as i32,
+        run_time as i32,
+        &state.database,
+    )
+    .await?;
 
     Ok(Json(execution_result))
 }
@@ -171,7 +163,7 @@ pub async fn save_submission(
     language: ProgrammingLanguage,
     code: String,
     score: i32,
-    runtime: i32,
+    run_time: i32,
     database: &PgPool,
 ) -> anyhow::Result<()> {
     let now = util::time::now().naive_local();
@@ -221,7 +213,7 @@ pub async fn save_submission(
         question_id,
         member_id,
         submit_number: submit_count + 1,
-        run_time: runtime,
+        run_time,
         score,
         language,
         character_count: code.len() as i32,

@@ -8,9 +8,9 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(ToSchema)]
 pub struct ErrorResponse {
     #[schema(value_type = u16)]
-    status: StatusCode,
-    message: String,
-    details: HashMap<String, String>,
+    pub status: StatusCode,
+    pub message: String,
+    pub details: HashMap<String, String>,
 }
 
 impl IntoResponse for ErrorResponse {
