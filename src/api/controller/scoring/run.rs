@@ -7,6 +7,7 @@ use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Room, Template, TestCase};
 use crate::enums::RoomKind;
+use crate::util::scoring::ExecutionSummary;
 use crate::util::{self, scoring::ExecutionResult};
 use crate::{Error, Result};
 
@@ -39,7 +40,7 @@ pub async fn run(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
     Json(data): Json<SubmitData>,
-) -> Result<Json<ExecutionResult>> {
+) -> Result<Json<ExecutionSummary>> {
     let _ = Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
         .map_err(|error| Error::Unauthorized {
@@ -54,7 +55,7 @@ pub async fn run(
 async fn run_internal(
     state: Arc<AppState>,
     data: SubmitData,
-) -> anyhow::Result<Json<ExecutionResult>> {
+) -> anyhow::Result<Json<ExecutionSummary>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");

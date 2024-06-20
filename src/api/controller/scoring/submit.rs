@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
-use sqlx::PgPool;
+use sqlx::{Execute, PgPool};
 use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Question, Room, Score, SubmitHistory, Template, TestCase};
 use crate::enums::{ProgrammingLanguage, RoomKind};
+use crate::util::scoring::ExecutionSummary;
 use crate::util::{self, scoring::ExecutionResult};
 use crate::{Error, Result};
 
@@ -40,7 +41,7 @@ pub async fn submit(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
     Json(data): Json<SubmitData>,
-) -> Result<Json<ExecutionResult>> {
+) -> Result<Json<ExecutionSummary>> {
     let member = Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
         .map_err(|error| Error::Unauthorized {
@@ -55,7 +56,7 @@ async fn submit_internal(
     state: Arc<AppState>,
     member: Member,
     data: SubmitData,
-) -> anyhow::Result<Json<ExecutionResult>> {
+) -> anyhow::Result<Json<ExecutionSummary>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
@@ -89,20 +90,27 @@ async fn submit_internal(
     let execution_result =
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
-    if let ExecutionResult::Succeed { score, runtime } = execution_result {
-        save_submission(
-            data.room_id,
-            data.question_id,
-            team_id,
-            member.id,
-            submit_count,
-            data.language,
-            data.code,
-            score as i32,
-            runtime as i32,
-            &state.database,
-        )
-        .await?;
+    match &execution_result {
+        ExecutionSummary::Executed(ExecutionResult {
+            score,
+            run_time,
+            details: _,
+        }) => {
+            save_submission(
+                data.room_id,
+                data.question_id,
+                team_id,
+                member.id,
+                submit_count,
+                data.language,
+                data.code,
+                *score as i32,
+                *run_time as i32,
+                &state.database,
+            )
+            .await?;
+        }
+        ExecutionSummary::CompilationError(compilation_error)
     }
 
     Ok(Json(execution_result))
@@ -188,8 +196,7 @@ pub async fn save_submission(
             last_submit_time: _,
             penalty,
         }) => {
-            let additional_penalty =
-                get_additional_penalty(id, score, database).await?;
+            let additional_penalty = get_additional_penalty(id, score, database).await?;
             sqlx::query!(
                 r#"
                 UPDATE scores

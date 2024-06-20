@@ -48,8 +48,9 @@ impl Modify for SecurityAddon {
         controller::question::QuestionData,
         enums::ProgrammingLanguage,
         util::scoring::CompilationError,
-        util::scoring::RuntimeError,
+        util::scoring::ExecuteOneDetail,
         util::scoring::ExecutionResult,
+        util::scoring::ExecutionSummary,
         crate::error::ErrorResponse,
     ))
 )]

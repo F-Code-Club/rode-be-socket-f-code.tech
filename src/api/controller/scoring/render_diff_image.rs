@@ -51,7 +51,7 @@ pub async fn render_diff_image(
             message: err.to_string(),
         })?;
 
-    let (_, diff_image) = util::scoring::css::render_diff_image(
+    let (_, diff_image) = util::scoring::frontend::css::render_diff_image(
         &render_diff_param.question_image_buffer,
         render_diff_param.html,
     )
