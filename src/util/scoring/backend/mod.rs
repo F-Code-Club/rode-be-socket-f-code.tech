@@ -5,7 +5,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use crate::{database::model::TestCase, enums::ProgrammingLanguage, util};
 
 use super::{
-    create_unique_project, CompilationError, ExecuteOneDetail, ExecutionResult, ExecutionSummary,
+    create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult, ExecutionSummary
 };
 
 pub mod c_cpp;
@@ -42,6 +42,7 @@ fn get_execute_command(
     }
 }
 
+#[tracing::instrument(err)]
 async fn compile(
     project_path: &Path,
     main_file_name: &str,
@@ -68,12 +69,13 @@ async fn compile(
     Ok(Ok(()))
 }
 
+#[tracing::instrument(err)]
 fn execute_one(
     project_path: &Path,
     main_file_name: &str,
     language: ProgrammingLanguage,
     test_case: &TestCase,
-) -> anyhow::Result<ExecuteOneDetail> {
+) -> anyhow::Result<Detail> {
     let test_case_id = test_case.id;
 
     let start = Instant::now();
@@ -100,25 +102,30 @@ fn execute_one(
     let run_time = (end - start).as_millis() as u32;
 
     if !runtime_error.is_empty() {
-        return Ok(ExecuteOneDetail::RuntimeError {
+        return Ok(Detail {
             test_case_id,
             run_time,
-            reason: runtime_error,
+            reason: Some(runtime_error),
+            kind: DetailKind::RuntimeError
         });
     }
 
     let is_matched = String::from_utf8(output.stdout)?.trim() == test_case.output.trim();
 
     if is_matched {
-        return Ok(ExecuteOneDetail::Passed {
+        Ok(Detail {
             test_case_id,
             run_time,
-        });
+            reason: None,
+            kind: DetailKind::Passed,
+        })
     } else {
-        return Ok(ExecuteOneDetail::Failed {
+        Ok(Detail {
             test_case_id,
             run_time,
-        });
+            reason: None,
+            kind: DetailKind::Failed
+        })
     }
 }
 

@@ -14,69 +14,37 @@ impl Display for CompilationError {
     }
 }
 
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(tag = "type")]
-pub enum ExecuteOneDetail {
-    Passed {
-        test_case_id: i32,
-        #[serde(skip)]
-        run_time: u32,
-    },
-    Failed {
-        test_case_id: i32,
-        #[serde(skip)]
-        run_time: u32,
-    },
-    RuntimeError {
-        test_case_id: i32,
-        #[serde(skip)]
-        run_time: u32,
-        reason: String,
-    },
+#[derive(Debug, PartialEq, Eq, Serialize, ToSchema)]
+pub enum DetailKind {
+    Passed,
+    Failed,
+    RuntimeError,
 }
 
-impl ExecuteOneDetail {
-    fn get_run_time(&self) -> u32 {
-        match self {
-            ExecuteOneDetail::Passed {
-                test_case_id: _,
-                run_time,
-            } => *run_time,
-            ExecuteOneDetail::Failed {
-                test_case_id: _,
-                run_time,
-            } => *run_time,
-            ExecuteOneDetail::RuntimeError {
-                test_case_id: _,
-                run_time,
-                reason: _,
-            } => *run_time,
-        }
-    }
+#[derive(Debug, Serialize, ToSchema)]
+pub struct Detail {
+    pub test_case_id: i32,
+    #[serde(skip)]
+    pub run_time: u32,
+    pub reason: Option<String>,
+    pub kind: DetailKind,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
     pub score: u32,
     pub run_time: u32,
-    pub details: Vec<ExecuteOneDetail>,
+    pub details: Vec<Detail>,
 }
 
 impl ExecutionResult {
-    pub fn from(details: Vec<ExecuteOneDetail>, question_score: u32) -> ExecutionResult {
+    pub fn from(details: Vec<Detail>, question_score: u32) -> ExecutionResult {
         let total_run_time = details
             .iter()
-            .map(ExecuteOneDetail::get_run_time)
-            .sum::<u32>();
-        let is_not_passed = details.iter().any(|detail| {
-            !matches!(
-                detail,
-                ExecuteOneDetail::Passed {
-                    test_case_id: _,
-                    run_time: _
-                }
-            )
-        });
+            .fold(0, |total_run_time, detail| total_run_time + detail.run_time);
+        let is_not_passed = details
+            .iter()
+            .any(|detail| detail.kind != DetailKind::Passed);
 
         ExecutionResult {
             score: if is_not_passed { 0 } else { question_score },
@@ -87,7 +55,6 @@ impl ExecutionResult {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-#[serde(tag = "type")]
 pub enum ExecutionSummary {
     CompilationError(CompilationError),
     Executed(ExecutionResult),
@@ -106,14 +73,15 @@ impl From<ExecutionResult> for ExecutionSummary {
 }
 
 impl ExecutionSummary {
-    fn get_score(&self) -> u32 {
+    // Return score and total run time
+    pub fn get_metrics(&self) -> (u32, u32) {
         match self {
             ExecutionSummary::Executed(ExecutionResult {
                 score,
-                run_time: _,
+                run_time,
                 details: _,
-            }) => *score,
-            ExecutionSummary::CompilationError(_) => 0,
+            }) => (*score, *run_time),
+            ExecutionSummary::CompilationError(_) => (0, 0),
         }
     }
 }

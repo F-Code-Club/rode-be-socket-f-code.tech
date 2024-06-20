@@ -6,22 +6,16 @@ pub use execution_summary::*;
 
 use std::env;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::path::PathBuf;
 use std::str;
-use std::time::Instant;
 
 use anyhow::Context;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
 use crate::util;
-
-use self::backend::c_cpp;
 
 pub const MAIN_FILE_NAME: &str = "Main";
 
@@ -64,6 +58,7 @@ pub async fn create_unique_project(
 
     Ok(project_path)
 }
+
 #[tracing::instrument(err)]
 pub async fn score(
     language: ProgrammingLanguage,
@@ -83,88 +78,95 @@ pub async fn score(
     backend::execute(MAIN_FILE_NAME, language, code, test_cases, question_score).await
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use rstest::rstest;
-//     use std::fs;
-//
-//     use super::*;
-//
-//     const QUESTION_SCORE: u32 = 1;
-//
-//     #[rstest]
-//     #[trace]
-//     #[tokio::test]
-//     async fn backend(
-//         #[values(
-//             ProgrammingLanguage::Python,
-//             ProgrammingLanguage::C_CPP,
-//             ProgrammingLanguage::Java
-//         )]
-//         language: ProgrammingLanguage,
-//         #[files("test_data/scoring/**")] problem_path: PathBuf,
-//     ) {
-//         let mut code_path = problem_path.clone();
-//         code_path.push("code");
-//         code_path.set_extension(language.get_extension());
-//         let code = String::from_utf8(fs::read(code_path).unwrap()).unwrap();
-//
-//         let mut testcases_path = problem_path;
-//         testcases_path.push("testcases.txt");
-//         let testcases_raw = String::from_utf8(fs::read(testcases_path).unwrap()).unwrap();
-//         let testcases = testcases_raw
-//             .split("\n\n")
-//             .array_chunks()
-//             .map(|[input, output]| TestCase {
-//                 input: input.to_string(),
-//                 output: output.to_string(),
-//                 ..Default::default()
-//             })
-//             .collect::<Vec<_>>();
-//
-//         let result = score(
-//             language,
-//             code.as_str(),
-//             Some(testcases),
-//             None,
-//             QUESTION_SCORE,
-//         )
-//         .await
-//         .unwrap();
-//         if let ExecutionResult::Succeed { score, runtime: _ } = result {
-//             assert!(score == QUESTION_SCORE)
-//         }
-//         assert!(false)
-//     }
-//
-//     #[rstest]
-//     #[trace]
-//     #[tokio::test]
-//     async fn frontend(
-//         #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
-//         #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
-//     ) -> anyhow::Result<()> {
-//         use image::io::Reader as ImageReader;
-//         use image::DynamicImage;
-//         use std::io::Cursor;
-//
-//         let mut html_path = problem_path.clone();
-//         html_path.push("source");
-//         html_path.set_extension("html");
-//         let html = String::from_utf8(fs::read(html_path).unwrap()).unwrap();
-//
-//         let mut template_path: PathBuf = problem_path;
-//         template_path.push("template.png");
-//
-//         let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
-//         let mut buffer = Vec::new();
-//         template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
-//
-//         let percent: f32 = match css::render_diff_image(&buffer, html).await? {
-//             (match_percent, _) => match_percent,
-//         };
-//
-//         assert!(percent > 90.0);
-//         Ok(())
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+    use std::fs;
+
+    use super::*;
+
+    const QUESTION_SCORE: u32 = 1;
+
+    #[rstest]
+    #[trace]
+    #[tokio::test]
+    async fn backend(
+        #[values(
+            ProgrammingLanguage::Python,
+            ProgrammingLanguage::C_CPP,
+            ProgrammingLanguage::Java
+        )]
+        language: ProgrammingLanguage,
+        #[files("test_data/scoring/**")] problem_path: PathBuf,
+    ) {
+        let mut code_path = problem_path.clone();
+        code_path.push("code");
+        code_path.set_extension(language.get_extension());
+        let code = String::from_utf8(fs::read(code_path).unwrap()).unwrap();
+
+        let mut testcases_path = problem_path;
+        testcases_path.push("testcases.txt");
+        let testcases_raw = String::from_utf8(fs::read(testcases_path).unwrap()).unwrap();
+        let testcases = testcases_raw
+            .split("\n\n")
+            .array_chunks()
+            .map(|[input, output]| TestCase {
+                input: input.to_string(),
+                output: output.to_string(),
+                ..Default::default()
+            })
+            .collect::<Vec<_>>();
+
+        let result = score(
+            language,
+            code.as_str(),
+            Some(testcases),
+            None,
+            QUESTION_SCORE,
+        )
+        .await
+        .unwrap();
+
+        if let ExecutionSummary::Executed(ExecutionResult {
+            score,
+            run_time: _,
+            details: _,
+        }) = result
+        {
+            assert!(score == QUESTION_SCORE);
+            return;
+        }
+
+        panic!()
+    }
+
+    #[rstest]
+    #[trace]
+    #[tokio::test]
+    async fn frontend(
+        #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
+    ) -> anyhow::Result<()> {
+        use image::io::Reader as ImageReader;
+        use image::DynamicImage;
+        use std::io::Cursor;
+
+        let mut html_path = problem_path.clone();
+        html_path.push("source");
+        html_path.set_extension("html");
+        let html = String::from_utf8(fs::read(html_path).unwrap()).unwrap();
+
+        let mut template_path: PathBuf = problem_path;
+        template_path.push("template.png");
+
+        let template: DynamicImage = ImageReader::open(template_path)?.decode()?;
+        let mut buffer = Vec::new();
+        template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
+
+        let percent: f32 = match super::frontend::css::render_diff_image(&buffer, html).await? {
+            (match_percent, _) => match_percent,
+        };
+
+        assert!(percent > 90.0);
+        Ok(())
+    }
+}
