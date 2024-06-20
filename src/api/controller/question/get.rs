@@ -54,8 +54,7 @@ async fn get_internal(
     let question = model::Question::get_one_by_id(data.question_id, &state.database).await?;
     let template =
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
-    let test_cases =
-        model::TestCase::get_many_by_question_id(data.question_id, &state.database).await?;
+    let test_cases = model::TestCase::get_visible(true, data.question_id, &state.database).await?;
 
     Ok(Json(QuestionData {
         question,
