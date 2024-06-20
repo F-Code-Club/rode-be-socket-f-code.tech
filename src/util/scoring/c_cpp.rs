@@ -1,4 +1,4 @@
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -9,10 +9,9 @@ use crate::database::model::TestCase;
 use crate::enums::ProgrammingLanguage;
 use crate::util;
 
-use super::write_to_random_file;
-use super::CompilationError;
 use super::ExecutionResult;
-use super::RuntimeError;
+use super::{write_to_random_file, ExecuteOneDetail};
+use super::{CompilationError, ExecutionSummary};
 
 async fn compile(code_path: PathBuf) -> anyhow::Result<Result<PathBuf, CompilationError>> {
     let executable_path = code_path.with_extension("");
@@ -38,10 +37,9 @@ async fn compile(code_path: PathBuf) -> anyhow::Result<Result<PathBuf, Compilati
     Ok(Ok(executable_path))
 }
 
-fn execute_one(
-    executable_path: &Path,
-    testcase: &TestCase,
-) -> anyhow::Result<Result<(bool, u32), RuntimeError>> {
+fn execute_one(executable_path: &Path, test_case: &TestCase) -> anyhow::Result<ExecuteOneDetail> {
+    let test_case_id = test_case.id;
+
     let start = Instant::now();
 
     // Run the code
@@ -54,7 +52,7 @@ fn execute_one(
 
     // Write input to stdin
     let mut stdin = process.stdin.take().unwrap();
-    stdin.write_all(testcase.input.as_bytes())?;
+    stdin.write_all(test_case.input.as_bytes())?;
     drop(stdin);
 
     let runtime_error = util::process::capture_stderr(&mut process)?;
@@ -63,57 +61,56 @@ fn execute_one(
 
     let end = Instant::now();
 
-    if !runtime_error.is_empty() {
-        return Ok(Err(RuntimeError));
-    }
-
-    let is_matched = String::from_utf8(output.stdout)?.trim() == testcase.output.trim();
     let run_time = (end - start).as_millis() as u32;
 
-    Ok(Ok((is_matched, run_time)))
+    if !runtime_error.is_empty() {
+        return Ok(ExecuteOneDetail::RuntimeError {
+            test_case_id,
+            run_time,
+            reason: runtime_error,
+        });
+    }
+
+    let is_matched = String::from_utf8(output.stdout)?.trim() == test_case.output.trim();
+
+    if is_matched {
+        return Ok(ExecuteOneDetail::Passed {
+            test_case_id,
+            run_time,
+        });
+    } else {
+        return Ok(ExecuteOneDetail::Failed {
+            test_case_id,
+            run_time,
+        });
+    }
 }
 
 pub async fn execute(
     code: &str,
-    testcases: Vec<TestCase>,
+    test_cases: Vec<TestCase>,
     question_score: u32,
-) -> anyhow::Result<ExecutionResult> {
+) -> anyhow::Result<ExecutionSummary> {
     let code_path = write_to_random_file(code, ProgrammingLanguage::C_CPP).await?;
 
     let executable_path = match compile(code_path).await? {
         Ok(value) => value,
         Err(compilation_error) => {
-            return Ok(ExecutionResult::CompilationError(compilation_error));
+            return Ok(ExecutionSummary::CompilationError(compilation_error));
         }
     };
 
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let execution_result_raw = testcases
+        let execution_result_raw = test_cases
             .par_iter()
-            .map(|testcase| execute_one(&executable_path, testcase))
-            .collect::<anyhow::Result<Result<Vec<_>, RuntimeError>>>();
+            .map(|test_case| execute_one(&executable_path, test_case))
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map(|details| ExecutionResult::from(details, question_score));
 
         let _ = send.send(execution_result_raw);
     });
-    let execution_result_raw = match recv.await?? {
-        Ok(value) => value,
-        Err(runtime_error) => {
-            return Ok(ExecutionResult::RuntimeError(runtime_error));
-        }
-    };
-    let (is_all_matched, total_run_time) =
-        execution_result_raw
-            .into_iter()
-            .fold((true, 0), |acc, current| {
-                let is_matched = acc.0 && current.0;
-                let run_time = acc.1 + current.1;
+    let execution_result = recv.await??;
 
-                (is_matched, run_time)
-            });
-
-    Ok(ExecutionResult::Succeed {
-        score: if is_all_matched { question_score } else { 0 },
-        runtime: total_run_time,
-    })
-}
+    Ok(ExecutionSummary::Executed(execution_result))
+ }
