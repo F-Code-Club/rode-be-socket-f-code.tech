@@ -1,4 +1,4 @@
-use std:: fmt::Display;
+use std::fmt::Display;
 
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -14,28 +14,38 @@ impl Display for CompilationError {
     }
 }
 
-impl CompilationError {
-    fn get_score(&self) -> u32 {
-        0
-    }
-    fn get_run_time(&self) -> u32 {
-        0
-    }
-}
-
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(tag = "type")]
 pub enum ExecuteOneDetail {
-    Passed { test_case_id: i32, run_time: u32 },
-    Failed { test_case_id: i32, run_time: u32 },
-    RuntimeError { test_case_id: i32, run_time: u32, reason: String },
+    Passed {
+        test_case_id: i32,
+        #[serde(skip)]
+        run_time: u32,
+    },
+    Failed {
+        test_case_id: i32,
+        #[serde(skip)]
+        run_time: u32,
+    },
+    RuntimeError {
+        test_case_id: i32,
+        #[serde(skip)]
+        run_time: u32,
+        reason: String,
+    },
 }
 
 impl ExecuteOneDetail {
     fn get_run_time(&self) -> u32 {
         match self {
-            ExecuteOneDetail::Passed { test_case_id: _, run_time } => *run_time,
-            ExecuteOneDetail::Failed { test_case_id: _, run_time } => *run_time,
+            ExecuteOneDetail::Passed {
+                test_case_id: _,
+                run_time,
+            } => *run_time,
+            ExecuteOneDetail::Failed {
+                test_case_id: _,
+                run_time,
+            } => *run_time,
             ExecuteOneDetail::RuntimeError {
                 test_case_id: _,
                 run_time,
@@ -47,9 +57,9 @@ impl ExecuteOneDetail {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
-    score: u32,
-    run_time: u32,
-    details: Vec<ExecuteOneDetail>,
+    pub score: u32,
+    pub run_time: u32,
+    pub details: Vec<ExecuteOneDetail>,
 }
 
 impl ExecutionResult {
@@ -58,9 +68,15 @@ impl ExecutionResult {
             .iter()
             .map(ExecuteOneDetail::get_run_time)
             .sum::<u32>();
-        let is_not_passed = details
-            .iter()
-            .any(|detail| !matches!(detail, ExecuteOneDetail::Passed { test_case_id: _, run_time: _ }));
+        let is_not_passed = details.iter().any(|detail| {
+            !matches!(
+                detail,
+                ExecuteOneDetail::Passed {
+                    test_case_id: _,
+                    run_time: _
+                }
+            )
+        });
 
         ExecutionResult {
             score: if is_not_passed { 0 } else { question_score },
@@ -86,5 +102,18 @@ impl From<CompilationError> for ExecutionSummary {
 impl From<ExecutionResult> for ExecutionSummary {
     fn from(value: ExecutionResult) -> Self {
         ExecutionSummary::Executed(value)
+    }
+}
+
+impl ExecutionSummary {
+    fn get_score(&self) -> u32 {
+        match self {
+            ExecutionSummary::Executed(ExecutionResult {
+                score,
+                run_time: _,
+                details: _,
+            }) => *score,
+            ExecutionSummary::CompilationError(_) => 0,
+        }
     }
 }
