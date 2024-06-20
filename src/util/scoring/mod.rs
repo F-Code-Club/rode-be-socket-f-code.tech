@@ -2,51 +2,20 @@ mod c_cpp;
 pub mod css;
 mod java;
 mod python;
+mod execution_summary;
+
+pub use execution_summary::*;
 
 use std::env;
-use std::fmt::Display;
 use std::path::PathBuf;
 
 use anyhow::Context;
-use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
-
-#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
-pub struct CompilationError {
-    pub reason: String,
-}
-
-impl Display for CompilationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
-pub struct RuntimeError;
-
-impl Display for RuntimeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(tag = "type")]
-pub enum ExecutionResult {
-    CompilationError(CompilationError),
-    RuntimeError(RuntimeError),
-    Succeed {
-        score: u32,
-        runtime: u32,
-    },
-}
 
 fn random_directory() -> PathBuf {
     loop {
