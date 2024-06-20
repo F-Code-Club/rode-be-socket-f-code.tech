@@ -5,18 +5,17 @@ use chromiumoxide::cdp::browser_protocol::page::{
 use chromiumoxide::page::ScreenshotParams;
 use chromiumoxide::{handler::viewport::Viewport, Browser, BrowserConfig};
 use futures::StreamExt;
-use image::{DynamicImage, GenericImageView, ImageFormat};
 use image::io::Reader as ImageReader;
+use image::{DynamicImage, GenericImageView, ImageFormat};
 use pixelmatch::pixelmatch;
 
 use std::fs::metadata;
 use std::io::Cursor;
 
-use super::ExecutionResult;
 use crate::database::model::Template;
 use crate::util::drive::HubDrive;
+use crate::util::scoring::{ExecutionResult, ExecutionSummary};
 
-#[allow(dead_code)]
 async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec<u8>> {
     let viewport = Viewport {
         width,
@@ -92,23 +91,25 @@ pub async fn render_diff_image(
     }
 }
 
-#[allow(unused_variables)]
-pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
+pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionSummary> {
     // Not existed in local
     if metadata(&template.local_path).is_err() {
         let hub = HubDrive::new().await?;
-        hub.download_file_by_id(&template.url, &template.local_path).await?;
+        hub.download_file_by_id(&template.url, &template.local_path)
+            .await?;
     }
     let mut template_buffer = Vec::new();
     let template: DynamicImage = ImageReader::open(&template.local_path)?.decode()?;
-    template.write_to(&mut Cursor::new(&mut template_buffer), image::ImageFormat::Png)?;
+    template.write_to(
+        &mut Cursor::new(&mut template_buffer),
+        image::ImageFormat::Png,
+    )?;
 
-    let (percent, _) = render_diff_image(
-        &template_buffer, 
-        code.to_owned())
-        .await?;
-    Ok(ExecutionResult::Succeed {
+    let (percent, _) = render_diff_image(&template_buffer, code.to_owned()).await?;
+
+    Ok(ExecutionSummary::Executed(ExecutionResult {
         score: percent as u32,
-        runtime: 0,
-    })
+        run_time: 0,
+        details: Vec::new(),
+    }))
 }
