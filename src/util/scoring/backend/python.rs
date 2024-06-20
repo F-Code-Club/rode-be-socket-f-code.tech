@@ -5,8 +5,8 @@ pub fn get_compile_command() -> Option<tokio::process::Command> {
 }
 
 pub fn get_execute_command(main_file_name: &str) -> std::process::Command {
-    let mut command = std::process::Command::new("javac");
-    command.arg(main_file_name);
+    let mut command = std::process::Command::new("python");
+    command.arg(format!("{}.py", main_file_name));
 
     command
 }
