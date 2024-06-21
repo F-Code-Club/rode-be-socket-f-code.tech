@@ -9,7 +9,7 @@ use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
 use crate::database::model::{Member, Question, Room, Score, SubmitHistory, Template, TestCase};
 use crate::enums::{ProgrammingLanguage, RoomKind};
-use crate::util::{self, scoring::ExecutionSummary};
+use crate::util::{self, scoring::ExecutionResult};
 use crate::{Error, Result};
 
 use super::SubmitData;
@@ -19,7 +19,7 @@ use super::SubmitData;
     tag = "Scoring",
     path = "/scoring/submit",
     responses (
-        (status = Status::OK, description = "Score of the code", body = ExecutionSummary),
+        (status = Status::OK, description = "Score of the code", body = ExecutionResult),
         (status = StatusCode::BAD_REQUEST, description = "Bad request!", body = ErrorResponse),
         (
             status = StatusCode::UNAUTHORIZED,
@@ -40,7 +40,7 @@ pub async fn submit(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
     Json(data): Json<SubmitData>,
-) -> Result<Json<ExecutionSummary>> {
+) -> Result<Json<ExecutionResult>> {
     let member = Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
         .map_err(|error| Error::Unauthorized {
@@ -55,7 +55,7 @@ async fn submit_internal(
     state: Arc<AppState>,
     member: Member,
     data: SubmitData,
-) -> anyhow::Result<Json<ExecutionSummary>> {
+) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
     let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
@@ -89,8 +89,6 @@ async fn submit_internal(
     let execution_result =
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
-    let (score, run_time) = execution_result.get_metrics();
-
     save_submission(
         data.room_id,
         data.question_id,
@@ -99,8 +97,8 @@ async fn submit_internal(
         submit_count,
         data.language,
         data.code,
-        score as i32,
-        run_time as i32,
+        execution_result.score as i32,
+        execution_result.run_time as i32,
         &state.database,
     )
     .await?;

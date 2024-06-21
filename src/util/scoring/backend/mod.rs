@@ -5,7 +5,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use crate::{database::model::TestCase, enums::ProgrammingLanguage, util};
 
 use super::{
-    create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult, ExecutionSummary
+    create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult
 };
 
 pub mod c_cpp;
@@ -105,7 +105,7 @@ fn execute_one(
         return Ok(Detail {
             test_case_id,
             run_time,
-            reason: Some(runtime_error),
+            runtime_error: Some(runtime_error),
             kind: DetailKind::RuntimeError
         });
     }
@@ -116,14 +116,14 @@ fn execute_one(
         Ok(Detail {
             test_case_id,
             run_time,
-            reason: None,
+            runtime_error: None,
             kind: DetailKind::Passed,
         })
     } else {
         Ok(Detail {
             test_case_id,
             run_time,
-            reason: None,
+            runtime_error: None,
             kind: DetailKind::Failed
         })
     }
@@ -135,11 +135,11 @@ pub async fn execute(
     code: &str,
     test_cases: Vec<TestCase>,
     question_score: u32,
-) -> anyhow::Result<ExecutionSummary> {
+) -> anyhow::Result<ExecutionResult> {
     let project_path = create_unique_project(code, language).await?;
 
     if let Err(compilation_error) = compile(&project_path, main_file_name, language).await? {
-        return Ok(ExecutionSummary::CompilationError(compilation_error));
+        return Ok(ExecutionResult::from_compilation_error(compilation_error));
     }
 
     let (send, recv) = tokio::sync::oneshot::channel();
@@ -148,11 +148,11 @@ pub async fn execute(
             .par_iter()
             .map(|test_case| execute_one(&project_path, main_file_name, language, test_case))
             .collect::<anyhow::Result<Vec<_>>>()
-            .map(|details| ExecutionResult::from(details, question_score));
+            .map(|details| ExecutionResult::from_details(details, question_score));
 
         let _ = send.send(execution_result_raw);
     });
     let execution_result = recv.await??;
 
-    Ok(ExecutionSummary::Executed(execution_result))
+    Ok(execution_result)
 }

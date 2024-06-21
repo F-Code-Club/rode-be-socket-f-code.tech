@@ -1,8 +1,8 @@
 pub mod backend;
-mod execution_summary;
+mod execution_result;
 pub mod frontend;
 
-pub use execution_summary::*;
+pub use execution_result::*;
 
 use std::env;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -66,7 +66,7 @@ pub async fn score(
     test_cases: Option<Vec<TestCase>>,
     template: Option<Template>,
     question_score: u32,
-) -> anyhow::Result<ExecutionSummary> {
+) -> anyhow::Result<ExecutionResult> {
     if language == ProgrammingLanguage::Css {
         let template =
             template.context("Template is required for frontend programming language(s)")?;

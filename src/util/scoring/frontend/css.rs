@@ -14,7 +14,7 @@ use std::io::Cursor;
 
 use crate::database::model::Template;
 use crate::util::drive::HubDrive;
-use crate::util::scoring::{ExecutionResult, ExecutionSummary};
+use crate::util::scoring::{ExecutionResult, ResultKind};
 
 async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec<u8>> {
     let viewport = Viewport {
@@ -91,7 +91,7 @@ pub async fn render_diff_image(
     }
 }
 
-pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionSummary> {
+pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
     // Not existed in local
     if metadata(&template.local_path).is_err() {
         let hub = HubDrive::new().await?;
@@ -107,9 +107,11 @@ pub async fn execute(code: &str, template: Template) -> anyhow::Result<Execution
 
     let (percent, _) = render_diff_image(&template_buffer, code.to_owned()).await?;
 
-    Ok(ExecutionSummary::Executed(ExecutionResult {
+    Ok(ExecutionResult {
         score: percent as u32,
         run_time: 0,
-        details: Vec::new(),
-    }))
+        details: None,
+        compilation_error: None,
+        kind: ResultKind::Executed
+    })
 }

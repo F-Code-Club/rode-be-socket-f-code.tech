@@ -50,8 +50,8 @@ impl Modify for SecurityAddon {
         util::scoring::CompilationError,
         util::scoring::DetailKind,
         util::scoring::Detail,
+        util::scoring::ResultKind,
         util::scoring::ExecutionResult,
-        util::scoring::ExecutionSummary,
         crate::error::ErrorResponse,
     ))
 )]
