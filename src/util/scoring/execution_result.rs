@@ -26,19 +26,27 @@ pub struct Detail {
     pub test_case_id: i32,
     #[serde(skip)]
     pub run_time: u32,
-    pub reason: Option<String>,
+    pub runtime_error: Option<String>,
     pub kind: DetailKind,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub enum ResultKind {
+    CompilationError,
+    Executed,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
     pub score: u32,
     pub run_time: u32,
-    pub details: Vec<Detail>,
+    pub details: Option<Vec<Detail>>,
+    pub compilation_error: Option<String>,
+    pub kind: ResultKind
 }
 
 impl ExecutionResult {
-    pub fn from(details: Vec<Detail>, question_score: u32) -> ExecutionResult {
+    pub fn from_details(details: Vec<Detail>, question_score: u32) -> ExecutionResult {
         let total_run_time = details
             .iter()
             .fold(0, |total_run_time, detail| total_run_time + detail.run_time);
@@ -49,39 +57,19 @@ impl ExecutionResult {
         ExecutionResult {
             score: if is_not_passed { 0 } else { question_score },
             run_time: total_run_time,
-            details,
+            details: Some(details),
+            compilation_error: None,
+            kind: ResultKind::Executed
         }
     }
-}
 
-#[derive(Debug, Serialize, ToSchema)]
-pub enum ExecutionSummary {
-    CompilationError(CompilationError),
-    Executed(ExecutionResult),
-}
-
-impl From<CompilationError> for ExecutionSummary {
-    fn from(value: CompilationError) -> Self {
-        ExecutionSummary::CompilationError(value)
-    }
-}
-
-impl From<ExecutionResult> for ExecutionSummary {
-    fn from(value: ExecutionResult) -> Self {
-        ExecutionSummary::Executed(value)
-    }
-}
-
-impl ExecutionSummary {
-    // Return score and total run time
-    pub fn get_metrics(&self) -> (u32, u32) {
-        match self {
-            ExecutionSummary::Executed(ExecutionResult {
-                score,
-                run_time,
-                details: _,
-            }) => (*score, *run_time),
-            ExecutionSummary::CompilationError(_) => (0, 0),
+    pub fn from_compilation_error(error: CompilationError) -> ExecutionResult {
+        ExecutionResult {
+            score: 0,
+            run_time: 0,
+            details: None,
+            compilation_error: Some(error.reason),
+            kind: ResultKind::CompilationError
         }
     }
 }
