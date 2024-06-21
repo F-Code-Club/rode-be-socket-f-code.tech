@@ -24,9 +24,13 @@ pub enum DetailKind {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Detail {
     pub test_case_id: i32,
+
     #[serde(skip)]
     pub run_time: u32,
+
+    /// Error when run the code, exist if kind is RuntimeError
     pub runtime_error: Option<String>,
+
     pub kind: DetailKind,
 }
 
@@ -38,11 +42,23 @@ pub enum ResultKind {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ExecutionResult {
+    /// Score of the execution
+    ///
+    /// # Mechanism
+    /// - Back end language: full score if passed all test cases and 0 otherwise
+    /// - Front end language: matching percent of the rendered code compare to the template
     pub score: u32,
+
+    /// Time required to run all test cases
     pub run_time: u32,
+
+    /// Detail about execution of all test cases
     pub details: Option<Vec<Detail>>,
+
+    /// Error when compile, exist if kind is CompilationError
     pub compilation_error: Option<String>,
-    pub kind: ResultKind
+
+    pub kind: ResultKind,
 }
 
 impl ExecutionResult {
@@ -59,7 +75,7 @@ impl ExecutionResult {
             run_time: total_run_time,
             details: Some(details),
             compilation_error: None,
-            kind: ResultKind::Executed
+            kind: ResultKind::Executed,
         }
     }
 
@@ -69,7 +85,7 @@ impl ExecutionResult {
             run_time: 0,
             details: None,
             compilation_error: Some(error.reason),
-            kind: ResultKind::CompilationError
+            kind: ResultKind::CompilationError,
         }
     }
 }
