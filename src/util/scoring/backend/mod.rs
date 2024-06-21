@@ -4,9 +4,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{database::model::TestCase, enums::ProgrammingLanguage, util};
 
-use super::{
-    create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult
-};
+use super::{create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult};
 
 pub mod c_cpp;
 pub mod java;
@@ -105,8 +103,8 @@ fn execute_one(
         return Ok(Detail {
             test_case_id,
             run_time,
-            runtime_error: Some(runtime_error),
-            kind: DetailKind::RuntimeError
+            runtime_error: Some("Runtime error".to_string()),
+            kind: DetailKind::RuntimeError,
         });
     }
 
@@ -124,7 +122,7 @@ fn execute_one(
             test_case_id,
             run_time,
             runtime_error: None,
-            kind: DetailKind::Failed
+            kind: DetailKind::Failed,
         })
     }
 }
