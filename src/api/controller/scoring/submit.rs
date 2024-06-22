@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use axum::extract::State;
 use axum::Json;
+use chrono::{DateTime, TimeZone};
+use chrono_tz::Tz;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -10,7 +12,7 @@ use crate::app_state::AppState;
 use crate::database::model::{Member, Question, Room, Score, SubmitHistory, Template, TestCase};
 use crate::enums::{ProgrammingLanguage, RoomKind};
 use crate::util::{self, scoring::ExecutionResult};
-use crate::{Error, Result};
+use crate::{config, Error, Result};
 
 use super::SubmitData;
 
@@ -51,16 +53,63 @@ pub async fn submit(
     Ok(execution_result)
 }
 
+fn get_additional_penalty(is_all_passed: bool, open_time: DateTime<Tz>, now: DateTime<Tz>) -> i32 {
+    if is_all_passed {
+        (now - open_time).num_seconds() as i32
+    } else {
+        *config::FAILED_SUBMISSION_PENALTY
+    }
+}
+
+pub async fn save_submission(
+    room: &Room,
+    question_id: Uuid,
+    member: &Member,
+    submit_count: i32,
+    language: ProgrammingLanguage,
+    code: String,
+    execution_result: &ExecutionResult,
+    now: DateTime<Tz>,
+    database: &PgPool,
+) -> anyhow::Result<()> {
+    let open_time = match config::TIME_ZONE.from_local_datetime(&room.open_time) {
+        chrono::offset::LocalResult::Single(open_time) => open_time,
+        _ => anyhow::bail!("Invalid room open time"),
+    };
+
+    let additional_penalty = get_additional_penalty(execution_result.score > 0, open_time, now);
+
+    let score_entry = Score::get(room.id, member.team_id, database).await?;
+    let score_id = score_entry.id.clone();
+
+    Score::update(score_entry, additional_penalty, now.naive_local(), database).await?;
+
+    SubmitHistory::insert(
+        question_id,
+        score_id,
+        member.id,
+        submit_count + 1,
+        execution_result.run_time as i32,
+        execution_result.score as i32,
+        language,
+        code.len() as i32,
+        now.naive_local(),
+        code,
+        database,
+    )
+    .await?;
+
+    Ok(())
+}
+
 async fn submit_internal(
     state: Arc<AppState>,
     member: Member,
     data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
     let room = Room::get_one_by_id(data.room_id, &state.database).await?;
-    let now = util::time::now().naive_local();
-    anyhow::ensure!(room.is_open(now), "Room closed");
-
-    let team_id = member.team_id;
+    let now = util::time::now();
+    anyhow::ensure!(room.is_open(now.naive_local()), "Room closed");
 
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;
@@ -90,106 +139,17 @@ async fn submit_internal(
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
     save_submission(
-        data.room_id,
+        &room,
         data.question_id,
-        team_id,
-        member.id,
+        &member,
         submit_count,
         data.language,
         data.code,
-        execution_result.score as i32,
-        execution_result.run_time as i32,
+        &execution_result,
+        now,
         &state.database,
     )
     .await?;
 
     Ok(Json(execution_result))
-}
-
-async fn get_additional_penalty(
-    score_id: Uuid,
-    score: i32,
-    database: &PgPool,
-) -> anyhow::Result<i32> {
-    // if pass all test cases
-    if score == 0 {
-        return Ok(0);
-    }
-
-    let query_result = sqlx::query!(
-        r#"
-        SELECT 
-            SUM(CASE WHEN score > 0 THEN 1 ELSE 0 END) passed_count,
-            SUM(CASE WHEN score = 0 THEN 1 ELSE 0 END) failed_count
-        FROM submit_histories
-        WHERE score_id = $1
-        "#,
-        score_id
-    )
-    .fetch_one(database)
-    .await?;
-    let passed_count = query_result.passed_count.unwrap_or(0);
-    let failed_count = query_result.failed_count.unwrap_or(0);
-
-    // current submit failed and the team had a passed submit in current room
-    //   => additional penalty = 1
-    // otherwise => 1 + number of failed submit in the past
-    let additional_penalty = 1 + if passed_count > 0 { 0 } else { failed_count };
-
-    Ok(additional_penalty as i32)
-}
-
-pub async fn save_submission(
-    room_id: i32,
-    question_id: Uuid,
-    team_id: i32,
-    member_id: i32,
-    submit_count: i32,
-    language: ProgrammingLanguage,
-    code: String,
-    score: i32,
-    run_time: i32,
-    database: &PgPool,
-) -> anyhow::Result<()> {
-    let now = util::time::now().naive_local();
-
-    let Score {
-        id: score_id,
-        room_id: _,
-        team_id: _,
-        total_score,
-        last_submit_time: _,
-        penalty,
-    } = Score::get(room_id, team_id, database).await?;
-    let additional_penalty = get_additional_penalty(score_id, score, database).await?;
-    sqlx::query!(
-        r#"
-        UPDATE scores
-        SET total_score = $2, last_submit_time = $3, penalty = $4
-        WHERE id = $1
-        "#,
-        score_id,
-        total_score + score,
-        now,
-        penalty + additional_penalty
-    )
-    .execute(database)
-    .await?;
-
-    // create new submit_histories
-    let new_submit_histories = SubmitHistory {
-        score_id,
-        question_id,
-        member_id,
-        submit_number: submit_count + 1,
-        run_time,
-        score,
-        language,
-        character_count: code.len() as i32,
-        last_submit_time: now,
-        submissions: code,
-    };
-    new_submit_histories.insert(database).await?;
-
-    Ok(())
 }
