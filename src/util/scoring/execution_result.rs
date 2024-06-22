@@ -88,4 +88,15 @@ impl ExecutionResult {
             kind: ResultKind::CompilationError,
         }
     }
+
+    pub fn is_all_passed(&self) -> Option<bool> {
+        match &self.details {
+            None => None,
+            Some(details) => Some(
+                details
+                    .iter()
+                    .all(|detail| detail.kind == DetailKind::Passed),
+            ),
+        }
+    }
 }
