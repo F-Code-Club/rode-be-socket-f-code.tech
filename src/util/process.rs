@@ -1,16 +1,17 @@
 use std::io::{BufRead, Write};
 
+use anyhow::Context;
 use tokio::io::AsyncBufReadExt as _;
 
 pub fn write_to_stdin(process: &mut std::process::Child, data: &[u8]) -> anyhow::Result<()> {
-    let mut stdin = process.stdin.take().unwrap();
+    let mut stdin = process.stdin.take().context("Failed to take the stdin of the process")?;
     stdin.write_all(data)?;
 
     Ok(())
 }
 
 pub fn capture_stderr(process: &mut std::process::Child) -> anyhow::Result<String> {
-    let stderr = process.stderr.take().unwrap();
+    let stderr = process.stderr.take().context("Failed to take the stderr of the process")?;
 
     let mut error = String::new();
 
@@ -26,7 +27,7 @@ pub fn capture_stderr(process: &mut std::process::Child) -> anyhow::Result<Strin
 }
 
 pub async fn capture_stderr_async(process: &mut tokio::process::Child) -> anyhow::Result<String> {
-    let stderr = process.stderr.take().unwrap();
+    let stderr = process.stderr.take().context("Failed to take the stderr of the process")?;
 
     let mut error = String::new();
 
