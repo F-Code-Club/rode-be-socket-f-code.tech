@@ -1,118 +1,81 @@
-mod c_cpp;
-pub mod css;
-mod java;
-mod python;
+pub mod backend;
+mod execution_result;
+pub mod frontend;
+
+pub use execution_result::*;
 
 use std::env;
-use std::fmt::Display;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::PathBuf;
+use std::str;
 
 use anyhow::Context;
-use serde::Serialize;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use utoipa::ToSchema;
-use uuid::Uuid;
 
 use crate::database::model::{Template, TestCase};
 use crate::enums::ProgrammingLanguage;
+use crate::util;
 
-#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
-pub struct CompilationError {
-    pub reason: String,
+pub const MAIN_FILE_NAME: &str = "Main";
+
+fn hash<T>(obj: T) -> u64
+where
+    T: Hash,
+{
+    let mut hasher = DefaultHasher::new();
+    obj.hash(&mut hasher);
+    hasher.finish()
 }
 
-impl Display for CompilationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
+async fn create_unique_directory(code: &str) -> anyhow::Result<PathBuf> {
+    let now = util::time::now();
+    let unique_id = hash((now, code)).to_string();
+    let mut path = env::temp_dir();
+    path.push(unique_id);
+    fs::create_dir(&path).await?;
+    Ok(path)
 }
 
-#[derive(Debug, Serialize, ToSchema, thiserror::Error)]
-pub struct RuntimeError;
-
-impl Display for RuntimeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(tag = "type")]
-pub enum ExecutionResult {
-    CompilationError(CompilationError),
-    RuntimeError(RuntimeError),
-    Succeed {
-        score: u32,
-        runtime: u32,
-    },
-}
-
-fn random_directory() -> PathBuf {
-    loop {
-        let mut path = env::temp_dir();
-        path.push(Uuid::new_v4().to_string());
-        if !path.exists() {
-            return path;
-        }
-    }
-}
-
-fn random_file_path(language: ProgrammingLanguage) -> PathBuf {
-    loop {
-        let mut path = random_directory();
-        path.push(Uuid::new_v4().to_string());
-        path.set_extension(language.get_extension());
-        if !path.exists() {
-            return path;
-        }
-    }
-}
-
-async fn write_to_random_file(
+/// Create a unique project using the hash of time and code
+pub async fn create_unique_project(
     code: &str,
     language: ProgrammingLanguage,
 ) -> anyhow::Result<PathBuf> {
-    let code_path = random_file_path(language);
-    fs::create_dir_all(code_path.parent().unwrap()).await?;
-    let mut file = fs::OpenOptions::new()
+    let project_path = create_unique_directory(code).await?;
+
+    let mut main_file_path = project_path.clone();
+    main_file_path.push(MAIN_FILE_NAME);
+    main_file_path.set_extension(language.get_extension());
+
+    let mut main_file = fs::OpenOptions::new()
         .create_new(true)
         .write(true)
-        .open(&code_path)
+        .open(&main_file_path)
         .await?;
-    file.write_all(code.as_bytes()).await?;
 
-    Ok(code_path)
+    main_file.write_all(code.as_bytes()).await?;
+
+    Ok(project_path)
 }
 
 #[tracing::instrument(err)]
 pub async fn score(
     language: ProgrammingLanguage,
     code: &str,
-    testcases: Option<Vec<TestCase>>,
+    test_cases: Option<Vec<TestCase>>,
     template: Option<Template>,
     question_score: u32,
 ) -> anyhow::Result<ExecutionResult> {
     if language == ProgrammingLanguage::Css {
         let template =
             template.context("Template is required for frontend programming language(s)")?;
-        return css::execute(code, template).await;
+        return frontend::css::execute(code, template).await;
     }
 
-    let testcases =
-        testcases.context("Testcases are required for backend programming language(s)")?;
-
-    if language == ProgrammingLanguage::C_CPP {
-        return c_cpp::execute(code, testcases, question_score).await;
-    }
-    if language == ProgrammingLanguage::Python {
-        return python::execute(code, testcases, question_score).await;
-    }
-    if language == ProgrammingLanguage::Java {
-        return java::execute(code, testcases, question_score).await;
-    }
-
-    unreachable!()
+    let test_cases =
+        test_cases.context("Testcases are required for backend programming language(s)")?;
+    backend::execute(MAIN_FILE_NAME, language, code, test_cases, question_score).await
 }
 
 #[cfg(test)]
@@ -163,17 +126,24 @@ mod tests {
         )
         .await
         .unwrap();
-        if let ExecutionResult::Succeed { score, runtime: _ } = result {
-            assert!(score == QUESTION_SCORE)
+
+        if let ExecutionSummary::Executed(ExecutionResult {
+            score,
+            run_time: _,
+            details: _,
+        }) = result
+        {
+            assert!(score == QUESTION_SCORE);
+            return;
         }
-        assert!(false)
+
+        panic!()
     }
 
     #[rstest]
     #[trace]
     #[tokio::test]
     async fn frontend(
-        #[values(ProgrammingLanguage::Css)] language: ProgrammingLanguage,
         #[files("test_data/css_scoring/eye-of-sauron")] problem_path: PathBuf,
     ) -> anyhow::Result<()> {
         use image::io::Reader as ImageReader;
@@ -192,7 +162,7 @@ mod tests {
         let mut buffer = Vec::new();
         template.write_to(&mut Cursor::new(&mut buffer), image::ImageFormat::Png)?;
 
-        let percent: f32 = match css::render_diff_image(&buffer, html).await? {
+        let percent: f32 = match super::frontend::css::render_diff_image(&buffer, html).await? {
             (match_percent, _) => match_percent,
         };
 

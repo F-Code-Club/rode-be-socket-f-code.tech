@@ -24,8 +24,8 @@ pub struct LoginData {
 
 /// Login route
 ///
-/// # Mechanisms
-/// When a user logs in, revoke all existing tokens associated with their account
+/// # Mechanism
+/// - When a user logs in, revoke all existing tokens associated with their account
 #[utoipa::path (
     post,
     tag = "Auth",

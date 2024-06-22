@@ -28,7 +28,7 @@ impl From<String> for ProgrammingLanguage {
 impl ProgrammingLanguage {
     pub fn get_extension(&self) -> &'static str {
         match self {
-            ProgrammingLanguage::C_CPP => "c",
+            ProgrammingLanguage::C_CPP => "cpp",
             ProgrammingLanguage::Python => "py",
             ProgrammingLanguage::Java => "java",
             ProgrammingLanguage::Css => "css",
