@@ -46,7 +46,8 @@ impl SubmitHistory {
     }
 
     /// Count the number of submit for a question of a team
-    async fn count(question_id: Uuid, team_id: i32, database: &PgPool) -> anyhow::Result<i32> {
+    #[tracing::instrument(err)]
+    pub async fn count(question_id: Uuid, team_id: i32, database: &PgPool) -> anyhow::Result<i32> {
         let submit_count = sqlx::query_scalar!(
             r#"
             SELECT COUNT(score_id)

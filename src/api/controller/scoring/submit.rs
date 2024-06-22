@@ -64,7 +64,7 @@ async fn submit_internal(
 
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;
-    let submit_count = count_submit(data.question_id, member.id, &state.database).await?;
+    let submit_count = SubmitHistory::count(data.question_id, member.id, &state.database).await?;
 
     anyhow::ensure!(
         submit_count < question.max_submit_time,
@@ -104,19 +104,6 @@ async fn submit_internal(
     .await?;
 
     Ok(Json(execution_result))
-}
-
-async fn count_submit(question_id: Uuid, member_id: i32, database: &PgPool) -> anyhow::Result<i32> {
-    let submit_count = sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM submit_histories WHERE question_id = $1 AND member_id = $2",
-        question_id,
-        member_id
-    )
-    .fetch_one(database)
-    .await?
-    .unwrap_or(0) as i32;
-
-    Ok(submit_count)
 }
 
 async fn get_additional_penalty(
@@ -166,44 +153,28 @@ pub async fn save_submission(
 ) -> anyhow::Result<()> {
     let now = util::time::now().naive_local();
 
-    // create new new score if not exist otherwise update
-    let score_id = match Score::get_optional_by_ids(room_id, team_id, database).await? {
-        None => {
-            let new_score = Score {
-                room_id,
-                team_id,
-                total_score: score,
-                last_submit_time: now,
-                ..Default::default()
-            };
-            new_score.insert(database).await?
-        }
-        Some(Score {
-            id,
-            room_id: _,
-            team_id: _,
-            total_score,
-            last_submit_time: _,
-            penalty,
-        }) => {
-            let additional_penalty = get_additional_penalty(id, score, database).await?;
-            sqlx::query!(
-                r#"
-                UPDATE scores
-                SET total_score = $2, last_submit_time = $3, penalty = $4
-                WHERE id = $1
-                "#,
-                id,
-                total_score + score,
-                now,
-                penalty + additional_penalty
-            )
-            .execute(database)
-            .await?;
-
-            id
-        }
-    };
+    let Score {
+        id: score_id,
+        room_id: _,
+        team_id: _,
+        total_score,
+        last_submit_time: _,
+        penalty,
+    } = Score::get(room_id, team_id, database).await?;
+    let additional_penalty = get_additional_penalty(score_id, score, database).await?;
+    sqlx::query!(
+        r#"
+        UPDATE scores
+        SET total_score = $2, last_submit_time = $3, penalty = $4
+        WHERE id = $1
+        "#,
+        score_id,
+        total_score + score,
+        now,
+        penalty + additional_penalty
+    )
+    .execute(database)
+    .await?;
 
     // create new submit_histories
     let new_submit_histories = SubmitHistory {
