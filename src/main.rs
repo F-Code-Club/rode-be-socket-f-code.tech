@@ -25,5 +25,5 @@ async fn main() {
         )
         .init();
 
-    let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
+    let (_, _) = tokio::join!(api::start_server(), api::start_metrics());
 }

@@ -2,7 +2,7 @@ mod controller;
 mod doc;
 mod extractor;
 mod metrics;
-mod router;
+mod server;
 mod timeout_handler;
 
 use std::net::SocketAddr;
@@ -13,9 +13,9 @@ use tokio::net::TcpListener;
 use crate::config;
 use crate::AppState;
 
-pub async fn start_api() {
+pub async fn start_server() {
     let state = Arc::new(AppState::new().await.unwrap());
-    let app = router::build(state);
+    let app = server::build(state);
     let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *config::SERVER_PORT))
         .await
         .unwrap();
