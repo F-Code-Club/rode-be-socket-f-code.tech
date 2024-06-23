@@ -18,9 +18,11 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::{app_state::AppState, config};
+
 use super::controller;
 use super::doc::ApiDoc;
-use crate::{app_state::AppState, config, util::timeout_handler::handle_timeout_error};
+use super::timeout_handler::timeout_handler;
 
 const ALLOW_HEADERS: [HeaderName; 7] = [
     ORIGIN,
@@ -66,7 +68,7 @@ pub fn build(state: Arc<AppState>) -> Router {
     ];
 
     let middleware = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(handle_timeout_error))
+        .layer(HandleErrorLayer::new(timeout_handler))
         .timeout(Duration::from_secs(*config::SUBMIT_TIME_OUT));
 
     // register routes

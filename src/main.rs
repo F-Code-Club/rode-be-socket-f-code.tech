@@ -1,6 +1,3 @@
-#![feature(const_option)]
-#![feature(const_int_from_str)]
-#![feature(iter_array_chunks)]
 #![feature(custom_test_frameworks)]
 
 pub mod api;
@@ -28,5 +25,5 @@ async fn main() {
         )
         .init();
 
-    let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
+    let (_, _) = tokio::join!(api::start_server(), api::start_metrics());
 }

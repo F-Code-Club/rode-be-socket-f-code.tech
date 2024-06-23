@@ -5,7 +5,7 @@ use axum::{
 
 use crate::Error;
 
-pub async fn handle_timeout_error(_method: Method, _uri: Uri, err: BoxError) -> Error {
+pub async fn timeout_handler(_method: Method, _uri: Uri, err: BoxError) -> Error {
     Error::TimedOut {
         reason: err.to_string(),
     }
