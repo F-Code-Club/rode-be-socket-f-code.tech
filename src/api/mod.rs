@@ -1,3 +1,10 @@
+mod controller;
+mod doc;
+mod extractor;
+mod metrics;
+mod router;
+mod timeout_handler;
+
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -5,12 +12,6 @@ use tokio::net::TcpListener;
 
 use crate::config;
 use crate::AppState;
-
-mod controller;
-mod doc;
-mod extractor;
-mod metrics;
-mod router;
 
 pub async fn start_api() {
     let state = Arc::new(AppState::new().await.unwrap());
