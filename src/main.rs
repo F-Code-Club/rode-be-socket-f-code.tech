@@ -14,9 +14,7 @@ pub mod util;
 pub use error::{Error, Result};
 
 use app_state::AppState;
-use tracing_subscriber::fmt::time::ChronoLocal;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[tokio::main]
 async fn main() {
@@ -24,8 +22,9 @@ async fn main() {
         .with(
             tracing_subscriber::fmt::layer()
                 .pretty()
-                .with_timer(ChronoLocal::rfc_3339()),
+                .with_timer(fmt::time::ChronoLocal::rfc_3339()),
         )
+        .with(EnvFilter::from_env("RODE_LOG"))
         .init();
 
     let (_, _) = tokio::join!(api::start_api(), api::start_metrics());
