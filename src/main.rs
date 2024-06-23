@@ -11,9 +11,8 @@ pub mod util;
 pub use error::{Error, Result};
 
 use app_state::AppState;
-use tracing_subscriber::fmt::time::ChronoLocal;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[tokio::main]
 async fn main() {
@@ -21,7 +20,13 @@ async fn main() {
         .with(
             tracing_subscriber::fmt::layer()
                 .pretty()
-                .with_timer(ChronoLocal::rfc_3339()),
+                .with_timer(fmt::time::ChronoLocal::rfc_3339()),
+        )
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::TRACE.into())
+                .with_env_var("RODE_LOG")
+                .from_env_lossy(),
         )
         .init();
 
