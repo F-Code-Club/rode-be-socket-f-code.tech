@@ -1,6 +1,3 @@
-#![feature(const_option)]
-#![feature(const_int_from_str)]
-#![feature(iter_array_chunks)]
 #![feature(custom_test_frameworks)]
 
 pub mod api;
