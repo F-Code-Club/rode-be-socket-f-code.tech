@@ -60,11 +60,9 @@ async fn submit_internal(
     let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
-    let team_id = member.team_id;
-
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;
-    let submit_count = SubmitHistory::count(data.question_id, member.id, &state.database).await?;
+    let submit_count = SubmitHistory::count(data.question_id, member.team_id, &state.database).await?;
 
     anyhow::ensure!(
         submit_count < question.max_submit_time,
@@ -92,7 +90,7 @@ async fn submit_internal(
     save_submission(
         data.room_id,
         data.question_id,
-        team_id,
+        member.team_id,
         member.id,
         submit_count,
         data.language,
