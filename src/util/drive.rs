@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::Ok;
 use google_drive3::hyper::client::HttpConnector;
 use google_drive3::hyper_rustls::HttpsConnector;
@@ -57,10 +59,10 @@ impl HubDrive {
 
     pub async fn download_file_by_id(
         &self,
-        url_path: &str,
-        local_path: &str,
+        url: &str,
+        path: impl AsRef<Path>,
     ) -> anyhow::Result<()> {
-        let file_id = extract_file_id(url_path).unwrap();
+        let file_id = extract_file_id(url).unwrap();
         let (resposne, _) = self
             .instance
             .files()
@@ -70,7 +72,7 @@ impl HubDrive {
             .doit()
             .await?;
 
-        let mut file = File::create(local_path).await?;
+        let mut file = File::create(path).await?;
         // Turn response body to byte and then write to file
         file.write_all(&to_bytes(resposne.into_body()).await?)
             .await?;
