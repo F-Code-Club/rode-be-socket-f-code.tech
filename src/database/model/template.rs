@@ -1,3 +1,4 @@
+use anyhow::Context;
 use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
@@ -72,8 +73,12 @@ impl Template {
         }
     }
 
+    #[tracing::instrument(err)]
     pub async fn download(&self) -> anyhow::Result<Vec<u8>> {
         let template_path = config::TEMPLATE_PATH.join(&self.local_path);
+        let parent_dir = template_path.parent().context("No template directory")?;
+        fs::create_dir_all(parent_dir).await?;
+
         if !template_path.exists() {
             let drive = HubDrive::new().await?;
             drive.download_file_by_id(&self.url, &template_path).await?;
