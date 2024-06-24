@@ -5,10 +5,11 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use tokio::fs;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-use crate::{app_state::AppState, database::model, Result};
+use crate::{app_state::AppState, config, database::model, util::drive::HubDrive, Result};
 
 #[derive(Deserialize, IntoParams)]
 pub struct GetQuestionData {
@@ -24,6 +25,8 @@ pub struct QuestionData {
     pub template: model::Template,
     #[schema(inline)]
     pub test_cases: Vec<model::TestCase>,
+    #[schema(format = Binary)]
+    pub question_template: Vec<u8>,
 }
 
 #[utoipa::path(
@@ -56,9 +59,17 @@ async fn get_internal(
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
     let test_cases = model::TestCase::get_visible(true, data.question_id, &state.database).await?;
 
+    let template_path = config::TEMPLATE_PATH.join(&template.local_path);
+    if !template_path.exists() {
+        let drive = HubDrive::new().await?;
+        drive.download_file_by_id(&template.url, &template_path).await?;
+    }
+    let question_template = fs::read(&template_path).await?;
+
     Ok(Json(QuestionData {
         question,
         template,
         test_cases,
+        question_template,
     }))
 }
