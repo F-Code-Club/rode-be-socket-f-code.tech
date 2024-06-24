@@ -26,11 +26,23 @@ pub struct HubDrive {
 
 impl HubDrive {
     pub async fn new() -> anyhow::Result<Self> {
-        let service_account =
-            oauth2::read_service_account_key(config::GOOGLE_API_KEY_PATH.as_str()).await?;
-        let auth = oauth2::ServiceAccountAuthenticator::builder(service_account)
-            .build()
-            .await?;
+        let service_account = oauth2::ServiceAccountKey {
+            key_type: Some("service_account".to_string()),
+            project_id: None,
+            private_key_id: Some(config::GOOGLE_PRIVATE_KEY_ID.clone()),
+            private_key: config::GOOGLE_PRIVATE_KEY.clone(),
+            client_email: config::GOOGLE_CLIENT_EMAIL.clone(),
+            client_id: None,
+            auth_uri: Some("https://accounts.google.com/o/oauth2/auth".to_string()),
+            token_uri: "https://oauth2.googleapis.com/token".to_string(),
+            auth_provider_x509_cert_url: None,
+            client_x509_cert_url: None
+        };
+        let auth = oauth2::ServiceAccountAuthenticator::builder(
+            service_account,
+        )
+        .build()
+        .await?;
 
         let instance = DriveHub::new(
             hyper::Client::builder().build(
