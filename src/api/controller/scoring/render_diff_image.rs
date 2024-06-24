@@ -4,16 +4,17 @@ use axum::extract::State;
 use axum::Json;
 use serde::Deserialize;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 use crate::api::extractor::JWTClaims;
 use crate::app_state::AppState;
-use crate::database::model::Member;
+use crate::database::model::{Member, Template};
 use crate::error::{Error, Result};
 use crate::util;
 
 #[derive(Deserialize, ToSchema)]
 pub struct RenderDiffImageData {
-    question_image_buffer: Vec<u8>,
+    question_id: Uuid,
     html: String,
 }
 
@@ -43,7 +44,7 @@ pub struct RenderDiffImageData {
 pub async fn render_diff_image(
     State(state): State<Arc<AppState>>,
     jwt_claims: JWTClaims,
-    Json(render_diff_param): Json<RenderDiffImageData>,
+    Json(data): Json<RenderDiffImageData>,
 ) -> Result<Json<Vec<u8>>> {
     Member::get_one_by_account_id(jwt_claims.sub, &state.database)
         .await
@@ -51,10 +52,20 @@ pub async fn render_diff_image(
             message: err.to_string(),
         })?;
 
-    let (_, diff_image) = util::scoring::frontend::css::render_diff_image(
-        &render_diff_param.question_image_buffer,
-        render_diff_param.html,
-    )
-    .await?;
+    let diff_image = render_diff_image_internal(state, data).await?;
+
+    Ok(diff_image)
+}
+
+pub async fn render_diff_image_internal(
+    state: Arc<AppState>,
+    data: RenderDiffImageData,
+) -> anyhow::Result<Json<Vec<u8>>> {
+    let template = Template::get_one_by_question_id(data.question_id, &state.database).await?;
+    let template_buffer = template.download().await?;
+
+    let (_, diff_image) =
+        util::scoring::frontend::css::render_diff_image(&template_buffer, data.html).await?;
+
     Ok(Json(diff_image))
 }
