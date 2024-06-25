@@ -4,6 +4,8 @@ services:
     container_name: rode-battle-socket-management
     image: ${DOCKER_HUB_URL}/rode-be-socket:nightly
     restart: unless-stopped
+    networks:
+      - rode-battle-network
     ports:
       - ${PORT}:${PORT}
     environment:
@@ -23,3 +25,7 @@ services:
       GOOGLE_CLIENT_EMAIL: ${GOOGLE_CLIENT_EMAIL}
       GOOGLE_PRIVATE_KEY: ${GOOGLE_PRIVATE_KEY}
       GOOGLE_PRIVATE_KEY_ID: ${GOOGLE_PRIVATE_KEY_ID}
+
+networks:
+  rode-battle-network:
+    external: true
