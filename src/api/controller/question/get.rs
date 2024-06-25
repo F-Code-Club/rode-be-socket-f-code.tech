@@ -24,6 +24,8 @@ pub struct QuestionData {
     pub template: model::Template,
     #[schema(inline)]
     pub test_cases: Vec<model::TestCase>,
+    #[schema(format = Binary)]
+    pub template_buffer: Vec<u8>,
 }
 
 #[utoipa::path(
@@ -55,10 +57,12 @@ async fn get_internal(
     let template =
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
     let test_cases = model::TestCase::get_visible(true, data.question_id, &state.database).await?;
+    let template_buffer = template.download().await?;
 
     Ok(Json(QuestionData {
         question,
         template,
         test_cases,
+        template_buffer,
     }))
 }

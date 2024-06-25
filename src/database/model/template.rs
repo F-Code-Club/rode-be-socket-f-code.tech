@@ -1,9 +1,12 @@
+use anyhow::Context;
 use moka::future::Cache;
 use serde::Serialize;
 use sqlx::PgPool;
-use tokio::sync::OnceCell;
+use tokio::{fs, sync::OnceCell};
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+use crate::{config, util::drive::HubDrive};
 
 #[derive(Debug, Clone, Serialize, ToSchema, sqlx::FromRow)]
 pub struct Template {
@@ -68,5 +71,20 @@ impl Template {
             Ok(template) => Ok(template),
             Err(error) => anyhow::bail!(error.to_string()),
         }
+    }
+
+    #[tracing::instrument(err)]
+    pub async fn download(&self) -> anyhow::Result<Vec<u8>> {
+        let template_path = config::TEMPLATE_PATH.join(&self.local_path);
+        let parent_dir = template_path.parent().context("No template directory")?;
+        fs::create_dir_all(parent_dir).await?;
+
+        if !template_path.exists() {
+            let drive = HubDrive::new().await?;
+            drive.download_file_by_id(&self.url, &template_path).await?;
+        }
+        let template_buffer = fs::read(&template_path).await?;
+
+        Ok(template_buffer)
     }
 }
