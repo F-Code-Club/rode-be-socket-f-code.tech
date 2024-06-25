@@ -17,7 +17,7 @@ jobs:
         with:
           context: .
           build-args: |
-            DB_URL=postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST}}/${{secrets.DB_DATABASE}}
+            DB_URL=postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST_LAN}}/${{secrets.DB_DATABASE}}
           push: true
           tags: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}/rode-be-socket:${{ github.ref_name == 'main' && 'stable' || 'nightly' }}
   
