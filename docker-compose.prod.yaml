@@ -1,11 +1,11 @@
 version: '3.8'
 services:
-  rode-battle-socket:
-    container_name: rode-battle-socket-management
+  rode-battle-socket-prod:
+    container_name: rode-battle-socket-management-prod
     image: ${DOCKER_HUB_URL}/rode-be-socket:nightly
     restart: unless-stopped
     networks:
-      - rode-battle-network-test
+      - rode-battle-network
     ports:
       - ${PORT}:${PORT}
       - ${METRICS_PORT}:${METRICS_PORT}
@@ -29,6 +29,5 @@ services:
       GOOGLE_PRIVATE_KEY_ID: ${GOOGLE_PRIVATE_KEY_ID}
 
 networks:
-  rode-battle-network-test:
-    name: rode-battle-network-test
+  rode-battle-network:
     external: true
