@@ -22,7 +22,15 @@ pub struct Room {
 }
 
 impl Room {
-    pub async fn get_one_by_id_internal(id: i32, database: &PgPool) -> sqlx::Result<Room> {
+    pub async fn get_one_by_code(code: String, database: &PgPool) -> anyhow::Result<Room> {
+        let room = sqlx::query_as_unchecked!(Room, "SELECT * FROM rooms WHERE code = $1", code)
+            .fetch_one(database)
+            .await?;
+
+        Ok(room)
+    }
+
+    async fn get_one_by_id_internal(id: i32, database: &PgPool) -> sqlx::Result<Room> {
         sqlx::query_as_unchecked!(Room, "SELECT * FROM rooms WHERE id = $1", id)
             .fetch_one(database)
             .await
