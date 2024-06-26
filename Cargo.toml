@@ -40,6 +40,7 @@ metrics-exporter-prometheus = { version = "0.15.0", default-features = false }
 metrics = { version = "0.23.0", default-features = false }
 chrono-tz = "0.9.0"
 dashmap = { version = "5.5.3", features = ["rayon", "inline"] }
+base64 = "0.22.1"
 
 [dev-dependencies]
 http-body-util = "0.1.1"
