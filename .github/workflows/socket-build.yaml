@@ -55,3 +55,38 @@ jobs:
       run: docker compose -f docker-compose.test.yaml -p rode-battle-be-socket-test down --rmi all -v
     - name: Deploy Socket
       run: docker compose -f docker-compose.test.yaml -p rode-battle-be-socket-test up -d
+  
+  prod-deploy:
+    name: Deploy Staging Socket API To F-Code Server For Testing
+    runs-on: fcode-japao-runner
+    needs: staging-deploy
+    env:
+      # Basic Config Socket
+      DATABASE_URL: postgres://${{secrets.PROD_DB_USERNAME}}:${{secrets.PROD_DB_PASSWORD}}@${{secrets.PROD_DB_HOST}}/${{secrets.PROD_DB_DATABASE}}
+      PORT: ${{secrets.PROD_PORT}}
+      METRICS_PORT: ${{secrets.METRICS_PORT}}
+      LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
+      PUBLIC_CORS_DOMAIN: ${{secrets.PROD_PUBLIC_CORS_DOMAIN}}
+      # Config JWT Access And Secret
+      JWT_SECRET: ${{secrets.JWT_SECRET}}
+      JWT_EXPIRED_IN: ${{secrets.JWT_EXPIRED_IN}}
+      JWT_REFRESH_SECRET: ${{secrets.JWT_SECRET}}
+      JWT_REFRESH_EXPIRED_IN: ${{secrets.JWT_REFRESH_EXPIRED_IN}}
+      # Config Test
+      SUBMIT_TIME_OUT: ${{secrets.SUBMIT_TIME_OUT}}
+      PUBLIC_TEST_CASE_COUNT: ${{secrets.PUBLIC_TEST_CASE_COUNT}}
+      # Config Google APIS
+      GOOGLE_CLIENT_EMAIL: ${{secrets.F_CODE_GOOGLE_CLIENT_EMAIL}}
+      GOOGLE_PRIVATE_KEY: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY}}
+      GOOGLE_PRIVATE_KEY_ID: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY_ID}}
+      # Config Docker
+      DOCKER_HUB_URL: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}
+    steps:
+    - name: Checkout Develop
+      uses: actions/checkout@v3
+    - name: DockerHub Login
+      run: echo ${{ secrets.F_CODE_DOCKER_PASS }} | docker login -u ${{ secrets.F_CODE_DOCKER_USER }} --password-stdin ${{secrets.F_CODE_DOCKER_REGISTRY_URL}}
+    - name: Clean Container, Image And Prepare For Deploy
+      run: docker compose -f docker-compose.prod.yaml -p rode-battle-be-socket-prod down --rmi all -v
+    - name: Deploy Socket
+      run: docker compose -f docker-compose.prod.yaml -p rode-battle-be-socket-prod up -d
