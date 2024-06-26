@@ -18,6 +18,7 @@ impl Display for CompilationError {
 pub enum DetailKind {
     Passed,
     Failed,
+    TimedOut,
     RuntimeError,
 }
 
@@ -49,7 +50,7 @@ pub struct ExecutionResult {
     /// - Front end language: matching percent of the rendered code compare to the template
     pub score: u32,
 
-    /// Time required to run all test cases
+    /// Time required to run all test cases in second
     pub run_time: u32,
 
     /// Detail about execution of all test cases
