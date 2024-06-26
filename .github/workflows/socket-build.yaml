@@ -57,7 +57,7 @@ jobs:
       run: docker compose -f docker-compose.test.yaml -p rode-battle-be-socket-test up -d
   
   prod-deploy:
-    name: Deploy Staging Socket API To F-Code Server For Testing
+    name: Deploy PROD Socket API To F-Code Server For PROD
     runs-on: fcode-japao-runner
     needs: staging-deploy
     env:
