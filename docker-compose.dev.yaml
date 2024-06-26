@@ -32,6 +32,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${PORT}:${PORT}
+      - ${METRICS_PORT}:${METRICS_PORT}
     environment:
       DATABASE_URL: poesgres://${DB_USERNAME}:${DB_PASSWORD}@postgresql-rode/${DB_DATABASE}
       JWT_SECRET: ${JWT_SECRET}
@@ -40,6 +41,7 @@ services:
       JWT_REFRESH_EXPIRED_IN: ${JWT_REFRESH_EXPIRED_IN}
       PUBLIC_TEST_CASE_COUNT: ${{PUBLIC_TEST_CASE_COUNT}}
       SERVER_PORT: ${SERVER_PORT}
+      METRICS_PORT: ${METRICS_PORT}
       PUBLIC_CORS_DOMAIN: ${PUBLIC_CORS_DOMAIN}
       LOCAL_CORS_DOMAIN: ${LOCAL_CORS_DOMAIN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
