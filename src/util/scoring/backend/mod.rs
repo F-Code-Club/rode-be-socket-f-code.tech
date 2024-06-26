@@ -1,8 +1,20 @@
-use std::{io::Write as _, path::Path, process::Stdio, time::Instant};
+use std::{
+    io::Write as _,
+    path::Path,
+    process::Stdio,
+    thread,
+    time::{self, Instant},
+};
 
+use anyhow::Context;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{database::model::TestCase, enums::ProgrammingLanguage, util};
+use crate::{
+    config::{self, TEST_CASE_TIME_OUT},
+    database::model::TestCase,
+    enums::ProgrammingLanguage,
+    util,
+};
 
 use super::{create_unique_project, CompilationError, Detail, DetailKind, ExecutionResult};
 
@@ -85,15 +97,50 @@ fn execute_one(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
+    let mut stdin = process
+        .stdin
+        .take()
+        .context("Failed to take the stderr of the process")?;
+    let stderr = process
+        .stderr
+        .take()
+        .context("Failed to take the stderr of the process")?;
+    let stdout = process
+        .stdout
+        .take()
+        .context("Failed to take the stderr of the process")?;
+
+    let thread = thread::spawn(move || -> anyhow::Result<bool> {
+        for _ in 0..*TEST_CASE_TIME_OUT {
+            if let Ok(Some(_)) = process.try_wait() {
+                return Ok(false);
+            }
+            thread::sleep(time::Duration::from_secs(1));
+        }
+
+        process.kill()?;
+
+        Ok(true)
+    });
 
     // Write input to stdin
-    let mut stdin = process.stdin.take().unwrap();
     stdin.write_all(test_case.input.as_bytes())?;
-    drop(stdin);
 
-    let runtime_error = util::process::capture_stderr(&mut process)?;
+    let runtime_error = util::process::capture_stderr(stderr)?;
+    let output = util::process::capture_stdout(stdout)?;
 
-    let output = process.wait_with_output()?;
+    let is_timed_out = thread
+        .join()
+        .map_err(|_| anyhow::anyhow!("Failed to join manger thread"))??;
+
+    if is_timed_out {
+        return Ok(Detail {
+            test_case_id,
+            run_time: *config::TEST_CASE_TIME_OUT,
+            runtime_error: None,
+            kind: DetailKind::TimedOut,
+        });
+    }
 
     let end = Instant::now();
 
@@ -108,7 +155,7 @@ fn execute_one(
         });
     }
 
-    let is_matched = String::from_utf8(output.stdout)?.trim() == test_case.output.trim();
+    let is_matched = output.trim() == test_case.output.trim();
 
     if is_matched {
         Ok(Detail {
