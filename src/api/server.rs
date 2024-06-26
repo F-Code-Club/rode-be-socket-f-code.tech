@@ -77,6 +77,7 @@ pub fn build(state: Arc<AppState>) -> Router {
         .route("/auth/login", post(controller::auth::login))
         .route("/auth/refresh", post(controller::auth::refresh))
         .route("/room/join", post(controller::room::join))
+        .route("/room/get", get(controller::room::get))
         .route("/team/get-id", get(controller::team::get_id))
         .route(
             "/editor/socket/:question_id/:team_id",
