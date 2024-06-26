@@ -29,6 +29,7 @@ jobs:
       # Basic Config Socket
       DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST}}/${{secrets.DB_DATABASE}}
       PORT: ${{secrets.PORT}}
+      METRICS_PORT: ${{secrets.METRICS_PORT}}
       LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
       PUBLIC_CORS_DOMAIN: ${{secrets.PUBLIC_CORS_DOMAIN}}
       # Config JWT Access And Secret

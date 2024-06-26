@@ -8,9 +8,11 @@ services:
       - rode-battle-network
     ports:
       - ${PORT}:${PORT}
+      - ${METRICS_PORT}:${METRICS_PORT}
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SERVER_PORT: ${PORT}
+      METRICS_PORT: ${METRICS_PORT}
       PUBLIC_CORS_DOMAIN: ${PUBLIC_CORS_DOMAIN}
       LOCAL_CORS_DOMAIN: ${LOCAL_CORS_DOMAIN}
 
