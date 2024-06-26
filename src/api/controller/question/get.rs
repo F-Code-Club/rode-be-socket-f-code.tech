@@ -7,6 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
+use base64::prelude::*;
 
 use crate::{app_state::AppState, database::model, Result};
 
@@ -24,6 +25,8 @@ pub struct QuestionData {
     pub template: model::Template,
     #[schema(inline)]
     pub test_cases: Vec<model::TestCase>,
+
+    /// Base 64 encoded template image of a question
     #[schema(format = Binary)]
     pub template_buffer: Vec<u8>,
 }
@@ -58,6 +61,7 @@ async fn get_internal(
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
     let test_cases = model::TestCase::get_visible(true, data.question_id, &state.database).await?;
     let template_buffer = template.download().await?;
+    let template_buffer = BASE64_STANDARD.encode(template_buffer).into_bytes();
 
     Ok(Json(QuestionData {
         question,
