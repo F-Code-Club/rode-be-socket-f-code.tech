@@ -64,7 +64,7 @@ jobs:
       # Basic Config Socket
       DATABASE_URL: postgres://${{secrets.PROD_DB_USERNAME}}:${{secrets.PROD_DB_PASSWORD}}@${{secrets.PROD_DB_HOST}}/${{secrets.PROD_DB_DATABASE}}
       PORT: ${{secrets.PROD_PORT}}
-      METRICS_PORT: ${{secrets.METRICS_PORT}}
+      METRICS_PORT: ${{secrets.PROD_METRICS_PORT}}
       LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
       PUBLIC_CORS_DOMAIN: ${{secrets.PROD_PUBLIC_CORS_DOMAIN}}
       # Config JWT Access And Secret

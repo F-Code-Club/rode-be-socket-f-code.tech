@@ -9,7 +9,7 @@ jobs:
     name: Check Clean Code On Pull Request
     runs-on: fcode-japao-runner
     env:
-      DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST_LAN}}/${{secrets.DB_DATABASE}}
+      DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST}}/${{secrets.DB_DATABASE}}
     steps:
       - name: Checkout Develop
         uses: actions/checkout@v3
