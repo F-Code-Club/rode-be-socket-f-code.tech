@@ -62,12 +62,15 @@ async fn submit_internal(
 
     let question =
         Question::get_one_by_ids(data.question_id, room.stack_id, &state.database).await?;
-    let submit_count = SubmitHistory::count(data.question_id, member.team_id, &state.database).await?;
+    let submit_count =
+        SubmitHistory::count(data.question_id, member.team_id, &state.database).await?;
 
-    anyhow::ensure!(
-        submit_count < question.max_submit_time,
-        "Reached the maxium number of submission(s)"
-    );
+    if data.language == ProgrammingLanguage::Css {
+        anyhow::ensure!(
+            submit_count < question.max_submit_time,
+            "Reached the maxium number of submission(s)"
+        );
+    }
 
     let (test_cases, template) = match room.r#type {
         RoomKind::Backend => {
