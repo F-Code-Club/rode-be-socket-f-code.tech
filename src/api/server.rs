@@ -109,14 +109,14 @@ pub fn build(state: Arc<AppState>) -> Router {
     // register global middlewares
     let router = router
         .layer(TraceLayer::new_for_http())
-        .layer(
-            CorsLayer::new()
-                .allow_origin(allow_origins)
-                .allow_headers(ALLOW_HEADERS)
-                .expose_headers(ALLOW_HEADERS)
-                .allow_credentials(true)
-                .allow_methods(ALLOW_METHODS),
-        )
+        // .layer(
+        //     CorsLayer::new()
+        //         .allow_origin(allow_origins)
+        //         .allow_headers(ALLOW_HEADERS)
+        //         .expose_headers(ALLOW_HEADERS)
+        //         .allow_credentials(true)
+        //         .allow_methods(ALLOW_METHODS),
+        // )
         .route_layer(middleware::from_fn(track_metrics));
 
     // init state
