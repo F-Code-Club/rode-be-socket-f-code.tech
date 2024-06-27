@@ -11,7 +11,7 @@ FROM ubuntu:22.04 AS final
 WORKDIR /rode-be-socket
 COPY --from=builder /rode-be-build/target/release/rode-be-socket /rode-be-socket
 RUN apt-get update \
-    && apt-get install curl openjdk-8-jdk build-essential python3 libssl-dev pkg-config -y \
+    && apt-get install curl openjdk-8-jdk build-essential python3 chromium-browser -y \
     && apt-get clean
     
 ENTRYPOINT ["/rode-be-socket/rode-be-socket"]
