@@ -1,11 +1,12 @@
 on:
   push:
     branches: ["develop", "main"]
+  workflow_dispatch:
 
 jobs:
   socket-build:
     name: Build source code to Docker image
-    runs-on: fcode-japao-runner 
+    runs-on: fcode-vnpt-runner 
     steps:
       - name: Checkout Develop
         uses: actions/checkout@v3
@@ -30,8 +31,11 @@ jobs:
       DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST}}/${{secrets.DB_DATABASE}}
       PORT: ${{secrets.PORT}}
       METRICS_PORT: ${{secrets.METRICS_PORT}}
+      # Config CORS
       LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
       PUBLIC_CORS_DOMAIN: ${{secrets.PUBLIC_CORS_DOMAIN}}
+      LOCAL_CORS_SOCKET_DOMAIN: ${{secrets.LOCAL_CORS_SOCKET_DOMAIN}}
+      PUBLIC_CORS_SOCKET_DOMAIN: ${{secrets.PUBLIC_CORS_SOCKET_DOMAIN}}
       # Config JWT Access And Secret
       JWT_SECRET: ${{secrets.JWT_SECRET}}
       JWT_EXPIRED_IN: ${{secrets.JWT_EXPIRED_IN}}
@@ -65,8 +69,11 @@ jobs:
       DATABASE_URL: postgres://${{secrets.PROD_DB_USERNAME}}:${{secrets.PROD_DB_PASSWORD}}@${{secrets.PROD_DB_HOST}}/${{secrets.PROD_DB_DATABASE}}
       PORT: ${{secrets.PROD_PORT}}
       METRICS_PORT: ${{secrets.PROD_METRICS_PORT}}
+      # Config CORS
       LOCAL_CORS_DOMAIN: ${{secrets.LOCAL_CORS_DOMAIN}}
       PUBLIC_CORS_DOMAIN: ${{secrets.PROD_PUBLIC_CORS_DOMAIN}}
+      LOCAL_CORS_SOCKET_DOMAIN: ${{secrets.PROD_LOCAL_CORS_SOCKET_DOMAIN}}
+      PUBLIC_CORS_SOCKET_DOMAIN: ${{secrets.PROD_PUBLIC_CORS_SOCKET_DOMAIN}}
       # Config JWT Access And Secret
       JWT_SECRET: ${{secrets.JWT_SECRET}}
       JWT_EXPIRED_IN: ${{secrets.JWT_EXPIRED_IN}}
@@ -79,6 +86,7 @@ jobs:
       GOOGLE_CLIENT_EMAIL: ${{secrets.F_CODE_GOOGLE_CLIENT_EMAIL}}
       GOOGLE_PRIVATE_KEY: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY}}
       GOOGLE_PRIVATE_KEY_ID: ${{secrets.F_CODE_GOOGLE_PRIVATE_KEY_ID}}
+      
       # Config Docker
       DOCKER_HUB_URL: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}
     steps:
