@@ -30,6 +30,7 @@ async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec
                 .get()
                 .context("Failed to get chrome path")?,
         )
+        .no_sandbox()
         .build()
     {
         Ok(config) => config,
