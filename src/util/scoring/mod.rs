@@ -33,7 +33,7 @@ async fn create_unique_directory(code: &str) -> anyhow::Result<PathBuf> {
     let unique_id = hash((now, code)).to_string();
     let mut path = env::temp_dir();
     path.push(unique_id);
-    fs::create_dir(&path).await?;
+    fs::create_dir_all(&path).await?;
     Ok(path)
 }
 

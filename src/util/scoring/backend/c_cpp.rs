@@ -11,5 +11,5 @@ pub fn get_compile_command(main_file_name: &str) -> Option<tokio::process::Comma
 }
 
 pub fn get_execute_command(main_file_name: &str) -> std::process::Command {
-    std::process::Command::new(main_file_name)
+    std::process::Command::new(format!("./{}", main_file_name))
 }
