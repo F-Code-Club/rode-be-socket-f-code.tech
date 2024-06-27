@@ -47,7 +47,7 @@ pub async fn get(
 }
 
 async fn get_internal(state: Arc<AppState>, data: GetRoomData) -> anyhow::Result<Json<Room>> {
-    let room = model::Room::get_one_by_code(data.room_code, &state.database).await?;
+    let room = model::Room::get_one_by_code(&data.room_code, &state.database).await?;
 
     Ok(Json(Room {
         open_time: room.open_time,

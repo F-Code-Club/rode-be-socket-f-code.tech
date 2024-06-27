@@ -15,11 +15,16 @@ pub struct Score {
 
 impl Score {
     #[tracing::instrument(err)]
-    pub async fn get(room_id: i32, team_id: i32, database: &PgPool) -> anyhow::Result<Score> {
+    pub async fn get(room_code: String, team_id: i32, database: &PgPool) -> anyhow::Result<Score> {
         let score = sqlx::query_as!(
             Score,
-            "SELECT * FROM scores WHERE room_id = $1 AND team_id = $2",
-            room_id,
+            r#"
+            SELECT scores.*
+            FROM scores 
+            INNER JOIN rooms ON rooms.id = scores.room_id
+            WHERE rooms.code = $1 AND team_id = $2
+            "#,
+            room_code,
             team_id
         )
         .fetch_one(database)
