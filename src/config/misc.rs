@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use chrono_tz::Tz;
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 
 use super::env_or_default;
 
@@ -14,3 +14,5 @@ pub static TEMPLATE_PATH: Lazy<PathBuf> =
 
 /// Time out for each test case in second
 pub static TEST_CASE_TIME_OUT: Lazy<u32> = Lazy::new(|| env_or_default("TEST_CASE_TIME_OUT", 3));
+
+pub static CHROME_PATH: OnceCell<PathBuf> = OnceCell::new();

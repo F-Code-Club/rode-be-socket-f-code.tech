@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{bail, Context};
 use chromiumoxide::cdp::browser_protocol::page::{
     CaptureScreenshotFormat, CaptureScreenshotParams,
 };
@@ -12,6 +12,7 @@ use pixelmatch::pixelmatch;
 use std::fs::metadata;
 use std::io::Cursor;
 
+use crate::config;
 use crate::database::model::Template;
 use crate::util::drive::HubDrive;
 use crate::util::scoring::{ExecutionResult, ResultKind};
@@ -22,7 +23,15 @@ async fn render_image(code: &str, width: u32, height: u32) -> anyhow::Result<Vec
         height,
         ..Default::default()
     };
-    let config = match BrowserConfig::builder().viewport(viewport).build() {
+    let config = match BrowserConfig::builder()
+        .viewport(viewport)
+        .chrome_executable(
+            config::CHROME_PATH
+                .get()
+                .context("Failed to get chrome path")?,
+        )
+        .build()
+    {
         Ok(config) => config,
         Err(error) => {
             bail!(error)
@@ -113,6 +122,6 @@ pub async fn execute(code: &str, template: Template) -> anyhow::Result<Execution
         run_time: 0,
         details: None,
         compilation_error: None,
-        kind: ResultKind::Executed
+        kind: ResultKind::Executed,
     })
 }
