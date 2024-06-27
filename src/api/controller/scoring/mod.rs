@@ -14,7 +14,7 @@ pub use submit::*;
 
 #[derive(Deserialize, ToSchema)]
 pub struct SubmitData {
-    room_id: i32,
+    room_code: String,
     #[schema(value_type = String, format = Uuid)]
     question_id: Uuid,
     language: ProgrammingLanguage,

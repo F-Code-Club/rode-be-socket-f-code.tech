@@ -56,7 +56,7 @@ async fn submit_internal(
     member: Member,
     data: SubmitData,
 ) -> anyhow::Result<Json<ExecutionResult>> {
-    let room = Room::get_one_by_id(data.room_id, &state.database).await?;
+    let room = Room::get_one_by_code(&data.room_code, &state.database).await?;
     let now = util::time::now().naive_local();
     anyhow::ensure!(room.is_open(now), "Room closed");
 
@@ -91,7 +91,7 @@ async fn submit_internal(
         util::scoring::score(data.language, &data.code, test_cases, template, 0).await?;
 
     save_submission(
-        data.room_id,
+        data.room_code,
         data.question_id,
         member.team_id,
         member.id,
@@ -141,7 +141,7 @@ async fn get_additional_penalty(
 }
 
 pub async fn save_submission(
-    room_id: i32,
+    room_code: String,
     question_id: Uuid,
     team_id: i32,
     member_id: i32,
@@ -161,7 +161,7 @@ pub async fn save_submission(
         total_score,
         last_submit_time: _,
         penalty,
-    } = Score::get(room_id, team_id, database).await?;
+    } = Score::get(room_code, team_id, database).await?;
     let additional_penalty = get_additional_penalty(score_id, score, database).await?;
     sqlx::query!(
         r#"
