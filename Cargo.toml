@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0.82"
 axum = { version = "0.7.5", features = ["macros", "multipart", "ws"] }
 axum-extra = { version = "0.9.3", features = ["query", "typed-header"] }
-chromiumoxide = { version = "0.5.7", features = ["_fetcher-native-tokio", "tokio-runtime"], default-features = false }
+chromiumoxide = { version = "0.5.7", features = ["_fetcher-rusttls-tokio", "tokio-runtime"], default-features = false }
 chrono = { version = "0.4.38", features = ["serde"] }
 dirs = "5.0.1"
 futures = "0.3.30"
