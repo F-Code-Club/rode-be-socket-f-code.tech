@@ -32,4 +32,26 @@ impl Score {
 
         Ok(score)
     }
+
+    pub async fn update(
+        score: Score,
+        additional_penalty: i32,
+        now: NaiveDateTime,
+        database: &PgPool,
+    ) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+                UPDATE scores
+                SET last_submit_time = $2, penalty = $3
+                WHERE id = $1
+            "#,
+            score.id,
+            now,
+            score.penalty + additional_penalty
+        )
+        .execute(database)
+        .await?;
+
+        Ok(())
+    }
 }

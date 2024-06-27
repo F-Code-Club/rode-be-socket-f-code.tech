@@ -16,3 +16,6 @@ pub static TEMPLATE_PATH: Lazy<PathBuf> =
 pub static TEST_CASE_TIME_OUT: Lazy<u32> = Lazy::new(|| env_or_default("TEST_CASE_TIME_OUT", 3));
 
 pub static CHROME_PATH: OnceCell<PathBuf> = OnceCell::new();
+
+pub static FAILED_SUBMISSION_PENALTY: Lazy<i32> =
+    Lazy::new(|| env_or_default("FAILED_SUBMISSION_PENALTY", 13));
