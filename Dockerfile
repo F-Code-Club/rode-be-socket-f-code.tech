@@ -13,7 +13,5 @@ COPY --from=builder /rode-be-build/target/release/rode-be-socket /rode-be-socket
 RUN apt-get update \
     && apt-get install curl openjdk-8-jdk build-essential python3 -y \
     && apt-get clean
-    RUN curl -LO https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
-    RUN rm google-chrome-stable_current_amd64.deb
+    
 ENTRYPOINT ["/rode-be-socket/rode-be-socket"]
