@@ -27,8 +27,7 @@ pub struct QuestionData {
     pub test_cases: Vec<model::TestCase>,
 
     /// Base 64 encoded template image of a question
-    #[schema(format = Binary)]
-    pub template_buffer: Vec<u8>,
+    pub template_buffer: String,
 }
 
 #[utoipa::path(
@@ -61,7 +60,7 @@ async fn get_internal(
         model::Template::get_one_by_question_id(data.question_id, &state.database).await?;
     let test_cases = model::TestCase::get_visible(true, data.question_id, &state.database).await?;
     let template_buffer = template.download().await?;
-    let template_buffer = BASE64_STANDARD.encode(template_buffer).into_bytes();
+    let template_buffer = BASE64_STANDARD.encode(template_buffer);
 
     Ok(Json(QuestionData {
         question,
