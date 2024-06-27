@@ -91,6 +91,7 @@ pub async fn render_diff_image(
     }
 }
 
+#[tracing::instrument(err)]
 pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
     // Not existed in local
     if metadata(&template.local_path).is_err() {
