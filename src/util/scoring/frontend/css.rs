@@ -105,9 +105,7 @@ pub async fn render_diff_image(
 pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
     // Not existed in local
     if metadata(&template.local_path).is_err() {
-        let hub = HubDrive::new().await?;
-        hub.download_file_by_id(&template.url, &template.local_path)
-            .await?;
+        template.download();
     }
     let mut template_buffer = Vec::new();
     let template: DynamicImage = ImageReader::open(&template.local_path)?.decode()?;
