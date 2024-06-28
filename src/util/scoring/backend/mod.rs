@@ -124,7 +124,9 @@ fn execute_one(
     });
 
     // Write input to stdin
-    stdin.write_all(test_case.input.as_bytes())?;
+    let mut input = test_case.input.clone();
+    input.push('\n');
+    stdin.write_all(input.as_bytes())?;
 
     let runtime_error = util::process::capture_stderr(stderr)?;
     let output = util::process::capture_stdout(stdout)?;
