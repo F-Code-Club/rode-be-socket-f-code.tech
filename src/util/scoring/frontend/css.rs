@@ -103,16 +103,7 @@ pub async fn render_diff_image(
 
 #[tracing::instrument(err)]
 pub async fn execute(code: &str, template: Template) -> anyhow::Result<ExecutionResult> {
-    // Not existed in local
-    if metadata(&template.local_path).is_err() {
-        template.download();
-    }
-    let mut template_buffer = Vec::new();
-    let template: DynamicImage = ImageReader::open(&template.local_path)?.decode()?;
-    template.write_to(
-        &mut Cursor::new(&mut template_buffer),
-        image::ImageFormat::Png,
-    )?;
+    let mut template_buffer = template.download().await?;
 
     let (percent, _) = render_diff_image(&template_buffer, code.to_owned()).await?;
 
